@@ -1,0 +1,3 @@
+services:
+    richardhj.klarna_checkout.controller.push:
+        class: Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Push

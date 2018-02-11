@@ -1,0 +1,31 @@
+{
+  "name": "richardhj/isotope-klarna-checkout",
+  "description": "Klarna Checkout integration into Isotope eCommerce",
+  "type": "contao-bundle",
+  "license": "LGPL-3.0-or-later",
+  "authors": [
+    {
+      "name": "Richard Henkenjohann",
+      "email": "richardhenkenjohann@googlemail.com",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/richardhj/isotope-klarna-checkout/issues",
+    "source": "https://github.com/richardhj/isotope-klarna-checkout"
+  },
+  "require": {
+    "php": "^7.0",
+    "contao/core-bundle": "^4.4",
+    "isotope/isotope-core": "^2.4",
+    "klarna/kco_rest": "^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Richardhj\\IsotopeKlarnaCheckoutBundle\\": "src/"
+    }
+  },
+  "extra": {
+    "contao-manager-plugin": "Richardhj\\IsotopeKlarnaCheckoutBundle\\ContaoManager\\Plugin"
+  }
+}

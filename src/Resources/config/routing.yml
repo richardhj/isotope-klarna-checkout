@@ -1,0 +1,6 @@
+richardhj.klarna_checkout.push:
+    path: /kco/push/{order_id}
+    defaults:
+        _scope: frontend
+        _token_check: false
+        _controller: richardhj.klarna_checkout.controller.push
