@@ -80,14 +80,10 @@ class KlarnaCheckout extends Module
      */
     protected function compile()
     {
-        $merchantId   = getenv('MERCHANT_ID') ?: '0';
-        $klarnaCheckout  = null;
-        $sharedSecret = getenv('SHARED_SECRET') ?: 'sharedSecret';
-        $connector    = KlarnaConnector::create(
-            $merchantId,
-            $sharedSecret,
-            ConnectorInterface::EU_TEST_BASE_URL
-        );
+        $merchantId     = getenv('MERCHANT_ID') ?: '0';
+        $klarnaCheckout = null;
+        $sharedSecret   = getenv('SHARED_SECRET') ?: 'sharedSecret';
+        $connector      = KlarnaConnector::create($merchantId, $sharedSecret, ConnectorInterface::EU_TEST_BASE_URL);
 
         /** @var Cart|Model $isotopeCart */
         $isotopeCart   = Isotope::getCart();
@@ -134,7 +130,6 @@ class KlarnaCheckout extends Module
                     'shipping_options'  => $this->shippingOptions(),
                 ]
             );
-
         }
 
         $klarnaCheckout->fetch();
@@ -149,17 +144,19 @@ class KlarnaCheckout extends Module
         $return = [];
 
         $ids = deserialize($this->iso_shipping_modules);
-        if (!empty($ids) && \is_array($ids)) {
-            /** @var Shipping[] $shippingMethods */
-            $shippingMethods = Shipping::findBy(['id IN ('.implode(',', $ids).')', "enabled='1'"], null);
-            if (null !== $shippingMethods) {
-                foreach ($shippingMethods as $shippingMethod) {
-                    if (!$shippingMethod->isAvailable()) {
-                        continue;
-                    }
+        if (empty($ids) || !\is_array($ids)) {
+            return [];
+        }
 
-                    $return[] = (array)ShippingOption::createForShippingMethod($shippingMethod);
+        /** @var Shipping[] $shippingMethods */
+        $shippingMethods = Shipping::findBy(['id IN ('.implode(',', $ids).')', "enabled='1'"], null);
+        if (null !== $shippingMethods) {
+            foreach ($shippingMethods as $shippingMethod) {
+                if (!$shippingMethod->isAvailable()) {
+                    continue;
                 }
+
+                $return[] = (array)ShippingOption::createForShippingMethod($shippingMethod);
             }
         }
 

@@ -16,6 +16,7 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
 
 use Contao\BackendTemplate;
 use Contao\CoreBundle\Exception\RedirectResponseException;
+use Contao\Model;
 use Contao\Module;
 use Contao\System;
 use Isotope\Isotope;
@@ -79,7 +80,7 @@ class KlarnaCheckoutConfirmation extends Module
         $sharedSecret = 'sharedSecret';
         $merchantId   = '0';
 
-        $connector   = KlarnaConnector::create($merchantId, $sharedSecret, ConnectorInterface::EU_TEST_BASE_URL);
+        $connector      = KlarnaConnector::create($merchantId, $sharedSecret, ConnectorInterface::EU_TEST_BASE_URL);
         $klarnaCheckout = new KlarnaOrder($connector, $orderId);
         $klarnaCheckout->fetch();
 
@@ -90,57 +91,65 @@ class KlarnaCheckoutConfirmation extends Module
 //
 //            throw new RedirectResponseException($uri);
 //        }
+        // Create order
         $isotopeOrder = Isotope::getCart()->getDraftOrder();
 
         $isotopeOrder->klarna_order_id      = $orderId;
         $isotopeOrder->nc_notification      = $this->nc_notification;
         $isotopeOrder->iso_addToAddressbook = $this->iso_addToAddressbook;
 
-        $billingAddress      = $klarnaCheckout->billing_address;
+        $billingAddress  = $klarnaCheckout->billing_address;
+        $shippingAddress = $klarnaCheckout->shipping_address;
 
-        $address             = Address::createForProductCollection($isotopeOrder);
-        $address->company    = $billingAddress->organization_name;
-        $address->firstname  = $billingAddress->given_name;
-        $address->lastname   = $billingAddress->family_name;
-        $address->email      = $billingAddress->email;
-        $address->salutation = $billingAddress->title;
-        $address->street_1   = $billingAddress->street_address;
-        $address->street_2   = $billingAddress->street_address2;
-        $address->postal     = $billingAddress->postal_code;
-        $address->city       = $billingAddress->city;
-        $address->country    = $billingAddress->country;
-        $address->save();
+        // Update billing address
+        $address = $isotopeOrder->getBillingAddress();
+        $address = $address ?? Address::createForProductCollection($isotopeOrder);
+        $address = $this->updateAddressByApiResponse($address, $billingAddress);
 
         $isotopeOrder->setBillingAddress($address);
 
-        $shippingAddress = $klarnaCheckout->shipping_address;
-        if ($shippingAddress === $billingAddress) {
-            $isotopeOrder->setShippingAddress($address);
+        // Update shipping address
+        if ($shippingAddress !== $billingAddress) {
+            $address = $isotopeOrder->getShippingAddress();
+            $address = $address ?? Address::createForProductCollection($isotopeOrder);
+            $address = $this->updateAddressByApiResponse($address, $shippingAddress);
         }
+        $isotopeOrder->setShippingAddress($address);
 
-        $address             = Address::createForProductCollection($isotopeOrder);
-        $address->company    = $shippingAddress->organization_name;
-        $address->firstname  = $shippingAddress->given_name;
-        $address->lastname   = $shippingAddress->family_name;
-        $address->email      = $shippingAddress->email;
-        $address->salutation = $shippingAddress->title;
-        $address->street_1   = $shippingAddress->street_address;
-        $address->street_2   = $shippingAddress->street_address2;
-        $address->postal     = $shippingAddress->postal_code;
-        $address->city       = $shippingAddress->city;
-        $address->country    = $shippingAddress->country;
-        $address->save();
-
-
+        // Update shipping method
         $selectedShipping = $klarnaCheckout->selected_shipping_option;
         $isotopeOrder->setShippingMethod(Shipping::findByIdOrAlias($selectedShipping->id));
 
+        // Save and lock order
         $isotopeOrder->save();
-
         $isotopeOrder->lock();
         $this->callPreCheckoutHook($isotopeOrder);
 
         $this->Template->gui = $klarnaCheckout->html_snippet;
+    }
+
+    /**
+     * @param Address|Model $address
+     * @param object  $data
+     *
+     * @return Address
+     */
+    private function updateAddressByApiResponse(Address $address, object $data): Address
+    {
+        $address->company    = $data->organization_name;
+        $address->firstname  = $data->given_name;
+        $address->lastname   = $data->family_name;
+        $address->email      = $data->email;
+        $address->salutation = $data->title;
+        $address->street_1   = $data->street_address;
+        $address->street_2   = $data->street_address2;
+        $address->postal     = $data->postal_code;
+        $address->city       = $data->city;
+        $address->country    = $data->country;
+
+        $address->save();
+
+        return $address;
     }
 
     /**
