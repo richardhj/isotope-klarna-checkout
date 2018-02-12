@@ -15,8 +15,10 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
 
 
 use Contao\BackendTemplate;
+use Contao\CoreBundle\Exception\RedirectResponseException;
 use Contao\Model;
 use Contao\Module;
+use Contao\PageModel;
 use Contao\System;
 use Isotope\Isotope;
 use Isotope\Model\Address;
@@ -69,6 +71,7 @@ class KlarnaCheckoutConfirmation extends Module
      *
      * @return void
      *
+     * @throws RedirectResponseException If the checkout is not completed yet.
      * @throws \RuntimeException
      * @throws \Klarna\Rest\Transport\Exception\ConnectorException
      * @throws \InvalidArgumentException
@@ -94,6 +97,14 @@ class KlarnaCheckoutConfirmation extends Module
 
         $klarnaCheckout = new KlarnaOrder($connector, $orderId);
         $klarnaCheckout->fetch();
+
+        if ('checkout_incomplete' === $klarnaCheckout->status) {
+            // Checkout incomplete. Back to the checkout.
+            $page = PageModel::findById($this->klarna_checkout_page);
+            $uri  = (null !== $page) ? $page->getFrontendUrl() : '';
+
+            throw new RedirectResponseException($uri);
+        }
 
         // Create order
         $isotopeOrder = Isotope::getCart()->getDraftOrder();
