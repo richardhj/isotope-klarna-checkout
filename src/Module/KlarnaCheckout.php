@@ -32,6 +32,7 @@ use Richardhj\IsotopeKlarnaCheckoutBundle\UtilEntity\ShippingOption;
 use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Session;
 
 class KlarnaCheckout extends Module
 {
@@ -122,15 +123,24 @@ class KlarnaCheckout extends Module
                     'order_tax_amount'  => ($isotopeCart->getTotal() - $isotopeCart->getTaxFreeTotal()) * 100,
                     'order_lines'       => $this->orderLines(),
                     'merchant_urls'     => [
-                        'terms'        => $this->uri($this->klarna_terms_page),
-                        'checkout'     => $this->uri($this->klarna_checkout_page),
-                        'confirmation' => $this->uri(
+                        'terms'                  => $this->uri($this->klarna_terms_page),
+                        'checkout'               => $this->uri($this->klarna_checkout_page),
+                        'confirmation'           => $this->uri(
                             $this->klarna_confirmation_page,
                             ['klarna_order_id' => '{checkout.order.id}']
                         ),
-                        'push'         => System::getContainer()->get('router')->generate(
+                        'push'                   => System::getContainer()->get('router')->generate(
                             'richardhj.klarna_checkout.push',
                             ['{checkout.order.id}']
+                        ),
+                        'shipping_option_update' => System::getContainer()->get('router')->generate(
+                            'richardhj.klarna_checkout.callback.address_update'
+                        ),
+                        'address_update' => System::getContainer()->get('router')->generate(
+                            'richardhj.klarna_checkout.callback.address_update'
+                        ),
+                        'country_change' => System::getContainer()->get('router')->generate(
+                            'richardhj.klarna_checkout.callback.country_change'
                         ),
                     ],
                     'shipping_options'  => $this->shippingOptions(),
@@ -149,10 +159,16 @@ class KlarnaCheckout extends Module
      * Get the shipping options as api-conform array.
      *
      * @return array
+     *
+     * @throws \RuntimeException
      */
     private function shippingOptions(): array
     {
         $return = [];
+
+        $session = new Session();
+        $session->start();
+        $session->set('ISO_CHECKOUT_MODULE', $this->id);
 
         $ids = deserialize($this->iso_shipping_modules);
         if (empty($ids) || !\is_array($ids)) {

@@ -4,3 +4,17 @@ richardhj.klarna_checkout.push:
         _scope: frontend
         _token_check: false
         _controller: richardhj.klarna_checkout.controller.push
+
+richardhj.klarna_checkout.callback.address_update:
+    path: /kco/callback/address_update
+    defaults:
+        _scope: frontend
+        _token_check: false
+        _controller: richardhj.klarna_checkout.controller.callback.address_update
+
+richardhj.klarna_checkout.callback_country_change:
+    path: /kco/callback/address_update
+    defaults:
+        _scope: frontend
+        _token_check: false
+        _controller: richardhj.klarna_checkout.controller.callback.country_change
