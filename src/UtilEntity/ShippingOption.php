@@ -85,7 +85,7 @@ final class ShippingOption
     {
         $this->shipping = $shipping;
 
-        $this->processShipping();
+        $this->processShippingMethod();
     }
 
     /**
@@ -98,7 +98,10 @@ final class ShippingOption
         return new self($shipping);
     }
 
-    private function processShipping()
+    /**
+     * Fill properties by given shipping method model.
+     */
+    private function processShippingMethod()
     {
         $this->id              = $this->shipping->getId();
         $this->name            = $this->shipping->getLabel();

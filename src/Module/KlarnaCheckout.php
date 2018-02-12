@@ -21,6 +21,7 @@ use Contao\Module;
 use Contao\PageModel;
 use Contao\System;
 use Isotope\Isotope;
+use Isotope\Model\Config;
 use Isotope\Model\ProductCollection\Cart;
 use Isotope\Model\Shipping;
 use Klarna\Rest\Checkout\Order as KlarnaOrder;
@@ -80,14 +81,20 @@ class KlarnaCheckout extends Module
      */
     protected function compile()
     {
-        $merchantId     = getenv('MERCHANT_ID') ?: '0';
-        $klarnaCheckout = null;
-        $sharedSecret   = getenv('SHARED_SECRET') ?: 'sharedSecret';
-        $connector      = KlarnaConnector::create($merchantId, $sharedSecret, ConnectorInterface::EU_TEST_BASE_URL);
+        /** @var Config|Model $config */
+        $config = Isotope::getConfig();
+        if (!$config->use_klarna) {
+            throw new \LogicException('Klarna is not configured in the Isotope config.');
+        }
+
+        $apiUsername = $config->klarna_api_username;
+        $apiPassword = $config->klarna_api_password;
+        $connector   = KlarnaConnector::create($apiUsername, $apiPassword, ConnectorInterface::EU_TEST_BASE_URL);
 
         /** @var Cart|Model $isotopeCart */
-        $isotopeCart   = Isotope::getCart();
-        $klarnaOrderId = $isotopeCart->klarna_order_id;
+        $isotopeCart    = Isotope::getCart();
+        $klarnaOrderId  = $isotopeCart->klarna_order_id;
+        $klarnaCheckout = null;
 
         if ($klarnaOrderId) {
             // Resume, just make the sure the cart is up to date
@@ -104,7 +111,6 @@ class KlarnaCheckout extends Module
         if (null === $klarnaCheckout) {
             /** @var Request $request */
             $request = System::getContainer()->get('request_stack')->getCurrentRequest();
-            $config  = Isotope::getConfig();
 
             $klarnaCheckout = new KlarnaOrder($connector);
             $klarnaCheckout->create(
@@ -139,6 +145,11 @@ class KlarnaCheckout extends Module
         $this->Template->gui = $klarnaCheckout->html_snippet;
     }
 
+    /**
+     * Get the shipping options as api-conform array.
+     *
+     * @return array
+     */
     private function shippingOptions(): array
     {
         $return = [];
@@ -164,7 +175,7 @@ class KlarnaCheckout extends Module
     }
 
     /**
-     * Return the items in the cart as api-conform array
+     * Return the items in the cart as api-conform array.
      *
      * @return array
      */

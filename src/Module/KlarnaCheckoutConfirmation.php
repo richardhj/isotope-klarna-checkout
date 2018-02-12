@@ -15,13 +15,12 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
 
 
 use Contao\BackendTemplate;
-use Contao\CoreBundle\Exception\RedirectResponseException;
 use Contao\Model;
 use Contao\Module;
 use Contao\System;
 use Isotope\Isotope;
 use Isotope\Model\Address;
-use Isotope\Model\ProductCollection\Order;
+use Isotope\Model\Config;
 use Isotope\Model\Shipping;
 use Klarna\Rest\Checkout\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
@@ -68,29 +67,34 @@ class KlarnaCheckoutConfirmation extends Module
     /**
      * Compile the current element
      *
+     * @return void
+     *
+     * @throws \RuntimeException
+     * @throws \Klarna\Rest\Transport\Exception\ConnectorException
+     * @throws \InvalidArgumentException
+     * @throws \GuzzleHttp\Exception\RequestException
+     * @throws \LogicException If Klarna not configured in Isotope config.
      * @throws ServiceNotFoundException
      * @throws ServiceCircularReferenceException
-     * @throws RedirectResponseException
      */
     protected function compile()
     {
-        /** @var Request $request */
-        $request      = System::getContainer()->get('request_stack')->getCurrentRequest();
-        $orderId      = $request->query->get('klarna_order_id');
-        $sharedSecret = 'sharedSecret';
-        $merchantId   = '0';
+        /** @var Config|Model $config */
+        $config = Isotope::getConfig();
+        if (!$config->use_klarna) {
+            throw new \LogicException('Klarna is not configured in the Isotope config.');
+        }
 
-        $connector      = KlarnaConnector::create($merchantId, $sharedSecret, ConnectorInterface::EU_TEST_BASE_URL);
+        /** @var Request $request */
+        $request     = System::getContainer()->get('request_stack')->getCurrentRequest();
+        $orderId     = $request->query->get('klarna_order_id');
+        $apiUsername = $config->klarna_api_username;
+        $apiPassword = $config->klarna_api_password;
+        $connector   = KlarnaConnector::create($apiUsername, $apiPassword, ConnectorInterface::EU_TEST_BASE_URL);
+
         $klarnaCheckout = new KlarnaOrder($connector, $orderId);
         $klarnaCheckout->fetch();
 
-//        if ('checkout_incomplete' === $klarnaOrder->status) {
-//            // Checkout incomplete. Back to the checkout.
-//            $page = PageModel::findById($this->klarna_checkout_page);
-//            $uri  = (null !== $page) ? $page->getFrontendUrl() : '';
-//
-//            throw new RedirectResponseException($uri);
-//        }
         // Create order
         $isotopeOrder = Isotope::getCart()->getDraftOrder();
 
@@ -123,16 +127,18 @@ class KlarnaCheckoutConfirmation extends Module
         // Save and lock order
         $isotopeOrder->save();
         $isotopeOrder->lock();
-        $this->callPreCheckoutHook($isotopeOrder);
 
         $this->Template->gui = $klarnaCheckout->html_snippet;
     }
 
     /**
      * @param Address|Model $address
-     * @param object  $data
+     * @param object        $data
      *
      * @return Address
+     *
+     * @throws \RuntimeException
+     * @throws \InvalidArgumentException
      */
     private function updateAddressByApiResponse(Address $address, object $data): Address
     {
@@ -150,29 +156,5 @@ class KlarnaCheckoutConfirmation extends Module
         $address->save();
 
         return $address;
-    }
-
-    /**
-     * Call the pre checkout hook. The checkout cannot be undone from now, but hey, we cannot simply ignore their needs!
-     *
-     * @param Order $order
-     */
-    private function callPreCheckoutHook(Order $order)
-    {
-        if (isset($GLOBALS['ISO_HOOKS']['preCheckout']) && \is_array($GLOBALS['ISO_HOOKS']['preCheckout'])) {
-            foreach ($GLOBALS['ISO_HOOKS']['preCheckout'] as $callback) {
-                try {
-                    // Note that the checkout cannot be cancelled anymore.
-                    System::importStatic($callback[0])->{$callback[1]}($order, $this);
-//                    if (true) {
-//                        $order = new \Klarna\Rest\OrderManagement\Order($connector, $orderId);
-//                        $order->cancel();
-//                    }
-                } catch (\Exception $e) {
-                    // The callback most probably required $this to be an instance of \Isotope\Module\Checkout.
-                    // Nothing we can do about it here.
-                }
-            }
-        }
     }
 }

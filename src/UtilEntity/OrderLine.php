@@ -115,6 +115,22 @@ final class OrderLine
     public $product_identifiers;
 
     /**
+     * @param Model|ProductCollectionItem $item
+     */
+    public function setItem($item)
+    {
+        $this->item = $item;
+    }
+
+    /**
+     * @param ProductCollectionSurcharge $surcharge
+     */
+    public function setSurcharge(ProductCollectionSurcharge $surcharge)
+    {
+        $this->surcharge = $surcharge;
+    }
+
+    /**
      * @param ProductCollectionItem $item
      *
      * @return OrderLine
@@ -142,6 +158,9 @@ final class OrderLine
         return $self;
     }
 
+    /**
+     * Fill properties by given item.
+     */
     private function processItem()
     {
         $this->reference        = $this->item->getSku();
@@ -157,6 +176,9 @@ final class OrderLine
         $this->addImageUrlForItem();
     }
 
+    /**
+     * Fill properties by given surcharge.
+     */
     private function processSurcharge()
     {
         $this->reference    = $this->surcharge->id;
@@ -192,6 +214,10 @@ final class OrderLine
         }
     }
 
+    /**
+     * Add the product type.
+     * Physical by default, digital when product has downloads.
+     */
     private function addTypeForItem()
     {
         $this->type = self::TYPE_PHYSICAL;
@@ -209,6 +235,9 @@ final class OrderLine
         }
     }
 
+    /**
+     * Add product url.
+     */
     private function addProductUrlForItem()
     {
         try {
@@ -222,6 +251,9 @@ final class OrderLine
         }
     }
 
+    /**
+     * Add image url.
+     */
     private function addImageUrlForItem()
     {
         $product = $this->item->getProduct();
@@ -236,21 +268,5 @@ final class OrderLine
 
             $this->image_url = Environment::get('base').'/'.$src;
         }
-    }
-
-    /**
-     * @param Model|ProductCollectionItem $item
-     */
-    public function setItem($item)
-    {
-        $this->item = $item;
-    }
-
-    /**
-     * @param ProductCollectionSurcharge $surcharge
-     */
-    public function setSurcharge(ProductCollectionSurcharge $surcharge)
-    {
-        $this->surcharge = $surcharge;
     }
 }
