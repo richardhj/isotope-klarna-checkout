@@ -167,7 +167,7 @@ final class OrderLine
         $this->name             = $this->item->getName();
         $this->quantity         = $this->item->quantity;
         $this->unit_price       = $this->item->getPrice() * 100;
-        $this->total_amount     = $this->item->getTotalPrice();
+        $this->total_amount     = $this->item->getTotalPrice() * 100;
         $this->total_tax_amount = $this->item->getTotalPrice() - $this->item->getTaxFreeTotalPrice();
         $this->tax_rate         = ($this->total_tax_amount / $this->total_amount) * 1000;
 

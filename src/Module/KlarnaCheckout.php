@@ -167,7 +167,6 @@ class KlarnaCheckout extends Module
         $return = [];
 
         $session = new Session();
-        $session->start();
         $session->set('ISO_CHECKOUT_MODULE', $this->id);
 
         $ids = deserialize($this->iso_shipping_modules);
@@ -183,7 +182,7 @@ class KlarnaCheckout extends Module
                     continue;
                 }
 
-                $return[] = (array)ShippingOption::createForShippingMethod($shippingMethod);
+                $return[] = get_object_vars(ShippingOption::createForShippingMethod($shippingMethod));
             }
         }
 
@@ -205,12 +204,12 @@ class KlarnaCheckout extends Module
         }
 
         foreach ($cart->getItems() as $item) {
-            $return[] = (array)OrderLine::createFromItem($item);
+            $return[] = get_object_vars(OrderLine::createFromItem($item));
         }
 
         foreach ($cart->getSurcharges() as $surcharge) {
             if ($surcharge->addToTotal) {
-                $return[] = (array)OrderLine::createForSurcharge($surcharge);
+                $return[] = get_object_vars(OrderLine::createForSurcharge($surcharge));
             }
         }
 

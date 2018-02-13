@@ -107,7 +107,6 @@ class AddressUpdate
         $return = [];
 
         $session = new Session();
-        $session->start();
         $checkoutModule = $session->get('ISO_CHECKOUT_MODULE');
         if (!$checkoutModule) {
             throw new \RuntimeException('Could not determine checkout module in use.');
