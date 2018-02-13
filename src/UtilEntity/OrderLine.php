@@ -184,11 +184,11 @@ final class OrderLine
         $this->reference    = $this->surcharge->id;
         $this->name         = $this->surcharge->label;
         $this->quantity     = 1;
-        $this->unit_price   = $this->surcharge->total_price;
-        $this->total_amount = $this->surcharge->total_price;
+        $this->unit_price   = $this->surcharge->total_price * 100;
+        $this->total_amount = $this->surcharge->total_price * 100;
 
         if ($this->surcharge->hasTax()) {
-            $this->total_tax_amount = $this->surcharge->total_price - $this->surcharge->tax_free_total_price;
+            $this->total_tax_amount = ($this->surcharge->total_price - $this->surcharge->tax_free_total_price) * 100;
             $this->tax_rate         = ($this->total_tax_amount / $this->total_amount) * 1000;
         } else {
             $this->tax_rate         = 0;

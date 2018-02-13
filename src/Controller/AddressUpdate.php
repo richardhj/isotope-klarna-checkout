@@ -22,6 +22,7 @@ use Isotope\Model\Address;
 use Isotope\Model\ProductCollection\Cart;
 use Isotope\Model\Shipping;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Module\KlarnaCheckout as KlarnaCheckoutModule;
+use Richardhj\IsotopeKlarnaCheckoutBundle\UtilEntity\OrderLine;
 use Richardhj\IsotopeKlarnaCheckoutBundle\UtilEntity\ShippingOption;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -88,6 +89,9 @@ class AddressUpdate
         $response = new JsonResponse(
             [
                 'shipping_options' => $shippingOptions,
+                'order_amount'     => $this->cart->getTotal() * 100,
+                'order_tax_amount' => ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
+                'order_lines'      => $this->orderLines(),
             ]
         );
         $response->send();
@@ -129,8 +133,6 @@ class AddressUpdate
      */
     private function shippingOptions(): array
     {
-        $return = [];
-
         $ids = deserialize($this->checkoutModule->iso_shipping_modules);
         if (empty($ids) || !\is_array($ids)) {
             return [];
@@ -139,6 +141,7 @@ class AddressUpdate
         // Set cart to prevent errors within available check
         Isotope::setCart($this->cart);
 
+        $methods = [];
         /** @var Shipping[] $shippingMethods */
         $shippingMethods = Shipping::findBy(['id IN ('.implode(',', $ids).')', "enabled='1'"], null);
         if (null !== $shippingMethods) {
@@ -147,7 +150,52 @@ class AddressUpdate
                     continue;
                 }
 
-                $return[] = (array)ShippingOption::createForShippingMethod($shippingMethod);
+                $methods[] = $shippingMethod;
+            }
+
+            // Add the default shipping address to the cart
+            if (1 === \count($methods)) {
+                $this->cart->setShippingMethod($methods[0]);
+            }
+        }
+
+        return array_map(
+            function (Shipping $shipping) {
+                return get_object_vars(ShippingOption::createForShippingMethod($shipping));
+            },
+            $methods
+        );
+    }
+
+
+    /**
+     * Return the items in the cart as api-conform array.
+     *
+     * @return array
+     */
+    private function orderLines(): array
+    {
+        $return = [];
+
+        if (null === $this->cart) {
+            return [];
+        }
+
+        foreach ($this->cart->getItems() as $item) {
+            $return[] = get_object_vars(OrderLine::createFromItem($item));
+        }
+
+        $surcharges = $this->cart->getSurcharges();
+        if (null !== ($paymentSurcharge = $this->cart->getShippingSurcharge())) {
+            $surcharges[] = $paymentSurcharge;
+        }
+        if (null !== ($paymentSurcharge = $this->cart->getPaymentSurcharge())) {
+            $surcharges[] = $paymentSurcharge;
+        }
+
+        foreach ($surcharges as $surcharge) {
+            if ($surcharge->addToTotal) {
+                $return[] = get_object_vars(OrderLine::createForSurcharge($surcharge));
             }
         }
 
