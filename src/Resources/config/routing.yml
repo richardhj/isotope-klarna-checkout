@@ -18,3 +18,10 @@ richardhj.klarna_checkout.callback.country_change:
         _scope: frontend
         _token_check: false
         _controller: richardhj.klarna_checkout.controller.callback.country_change
+
+richardhj.klarna_checkout.callback.shipping_option_update:
+    path: /kco/callback/shipping_option_update
+    defaults:
+        _scope: frontend
+        _token_check: false
+        _controller: richardhj.klarna_checkout.controller.callback.shipping_option_update

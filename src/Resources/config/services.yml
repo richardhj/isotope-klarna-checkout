@@ -7,3 +7,6 @@ services:
 
     richardhj.klarna_checkout.controller.callback.country_change:
         class: Richardhj\IsotopeKlarnaCheckoutBundle\Controller\CountryChange
+
+    richardhj.klarna_checkout.controller.callback.shipping_option_update:
+        class: Richardhj\IsotopeKlarnaCheckoutBundle\Controller\ShippingOptionUpdate

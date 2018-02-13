@@ -136,7 +136,7 @@ class KlarnaCheckout extends Module
                             UrlGeneratorInterface::ABSOLUTE_URL
                         ),
                         'shipping_option_update' => System::getContainer()->get('router')->generate(
-                            'richardhj.klarna_checkout.callback.address_update',
+                            'richardhj.klarna_checkout.callback.shipping_option_update',
                             [],
                             UrlGeneratorInterface::ABSOLUTE_URL
                         ),
