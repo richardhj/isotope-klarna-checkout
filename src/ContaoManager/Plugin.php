@@ -42,6 +42,7 @@ class Plugin implements BundlePluginInterface, RoutingPluginInterface
                 ->setLoadAfter(
                     [
                         ContaoCoreBundle::class,
+                        'isotope',
                     ]
                 ),
         ];
