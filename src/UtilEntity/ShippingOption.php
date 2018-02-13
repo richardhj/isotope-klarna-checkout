@@ -106,7 +106,7 @@ final class ShippingOption
         $this->id              = $this->shipping->getId();
         $this->name            = $this->shipping->getLabel();
         $this->description     = $this->shipping->getNote();
-        $this->price           = $this->shipping->getPrice();
+        $this->price           = $this->shipping->getPrice() * 100;
         $this->tax_amount      = 0;
         $this->tax_rate        = 0;
         $this->shipping_method = self::METHOD_OWN;
