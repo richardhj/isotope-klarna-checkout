@@ -51,7 +51,7 @@ class AddressUpdate
         $cart    = Isotope::getCart();
         $address = $cart->getShippingAddress();
         $address = $address ?? Address::createForProductCollection($cart);
-        $address = $this->updateAddressByApiResponse($address, $shippingAddress);
+        $address = $this->updateAddressByApiResponse($address, (array)$shippingAddress);
 
         $cart->setShippingAddress($address);
         $cart->save();
@@ -109,9 +109,9 @@ class AddressUpdate
      */
     private function shippingOptions(): array
     {
-        $return = [];
-
+        $return  = [];
         $session = new Session();
+
         $checkoutModule = $session->get('ISO_CHECKOUT_MODULE');
         if (!$checkoutModule) {
             throw new \RuntimeException('Could not determine checkout module in use.');
