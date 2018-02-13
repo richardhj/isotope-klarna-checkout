@@ -15,11 +15,13 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
 
 
 use Contao\BackendTemplate;
+use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\CoreBundle\Exception\RedirectResponseException;
 use Contao\Model;
 use Contao\Module;
 use Contao\PageModel;
 use Contao\System;
+use GuzzleHttp\Exception\ClientException;
 use Isotope\Isotope;
 use Isotope\Model\Address;
 use Isotope\Model\Config;
@@ -71,11 +73,12 @@ class KlarnaCheckoutConfirmation extends Module
      *
      * @return void
      *
+     * @throws \GuzzleHttp\Exception\RequestException
+     * @throws \Contao\CoreBundle\Exception\PageNotFoundException
      * @throws RedirectResponseException If the checkout is not completed yet.
      * @throws \RuntimeException
      * @throws \Klarna\Rest\Transport\Exception\ConnectorException
      * @throws \InvalidArgumentException
-     * @throws \GuzzleHttp\Exception\RequestException
      * @throws \LogicException If Klarna not configured in Isotope config.
      * @throws ServiceNotFoundException
      * @throws ServiceCircularReferenceException
@@ -96,9 +99,16 @@ class KlarnaCheckoutConfirmation extends Module
         $connector   = KlarnaConnector::create($apiUsername, $apiPassword, ConnectorInterface::EU_TEST_BASE_URL);
 
         $klarnaCheckout = new KlarnaOrder($connector, $orderId);
-        $klarnaCheckout->fetch();
+        try {
+            $klarnaCheckout->fetch();
+        } catch (ClientException $e) {
+            if (404 === $e->getResponse()->getStatusCode()) {
+                throw new PageNotFoundException('Order not found: ID '.$orderId);
+            }
+            return;
+        }
 
-        if ('checkout_incomplete' === $klarnaCheckout->status) {
+        if ('checkout_incomplete' === $klarnaCheckout['status']) {
             // Checkout incomplete. Back to the checkout.
             $page = PageModel::findById($this->klarna_checkout_page);
             $uri  = (null !== $page) ? $page->getFrontendUrl() : '';
@@ -113,8 +123,8 @@ class KlarnaCheckoutConfirmation extends Module
         $isotopeOrder->nc_notification      = $this->nc_notification;
         $isotopeOrder->iso_addToAddressbook = $this->iso_addToAddressbook;
 
-        $billingAddress  = $klarnaCheckout->billing_address;
-        $shippingAddress = $klarnaCheckout->shipping_address;
+        $billingAddress  = $klarnaCheckout['billing_address'];
+        $shippingAddress = $klarnaCheckout['shipping_address'];
 
         // Update billing address
         $address = $isotopeOrder->getBillingAddress();
@@ -132,37 +142,37 @@ class KlarnaCheckoutConfirmation extends Module
         $isotopeOrder->setShippingAddress($address);
 
         // Update shipping method
-        $selectedShipping = $klarnaCheckout->selected_shipping_option;
+        $selectedShipping = $klarnaCheckout['selected_shipping_option'];
         $isotopeOrder->setShippingMethod(Shipping::findByIdOrAlias($selectedShipping->id));
 
         // Save and lock order
         $isotopeOrder->save();
         $isotopeOrder->lock();
 
-        $this->Template->gui = $klarnaCheckout->html_snippet;
+        $this->Template->gui = $klarnaCheckout['html_snippet'];
     }
 
     /**
      * @param Address|Model $address
-     * @param object        $data
+     * @param array         $data
      *
      * @return Address
      *
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
      */
-    private function updateAddressByApiResponse(Address $address, object $data): Address
+    private function updateAddressByApiResponse(Address $address, array $data): Address
     {
-        $address->company    = $data->organization_name;
-        $address->firstname  = $data->given_name;
-        $address->lastname   = $data->family_name;
-        $address->email      = $data->email;
-        $address->salutation = $data->title;
-        $address->street_1   = $data->street_address;
-        $address->street_2   = $data->street_address2;
-        $address->postal     = $data->postal_code;
-        $address->city       = $data->city;
-        $address->country    = $data->country;
+        $address->company    = $data['organization_name'];
+        $address->firstname  = $data['given_name'];
+        $address->lastname   = $data['family_name'];
+        $address->email      = $data['email'];
+        $address->salutation = $data['title'];
+        $address->street_1   = $data['street_address'];
+        $address->street_2   = $data['street_address2'];
+        $address->postal     = $data['postal_code'];
+        $address->city       = $data['city'];
+        $address->country    = $data['country'];
 
         $address->save();
 

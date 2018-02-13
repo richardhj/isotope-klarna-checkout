@@ -244,7 +244,7 @@ final class OrderLine
             $product = $this->item->getProduct();
             $jumpTo  = $this->item->getRelated('jumpTo');
             if (null !== $jumpTo && $this->item->hasProduct() && $product->isAvailableInFrontend()) {
-                $this->product_url = $product->generateUrl($jumpTo);
+                $this->product_url = Environment::get('url').'/'.$product->generateUrl($jumpTo);
             }
         } catch (\Exception $e) {
             // :-/
@@ -266,7 +266,7 @@ final class OrderLine
                 $src = 'isotope/'.strtolower($src[0]).'/'.$src;
             }
 
-            $this->image_url = Environment::get('base').'/'.$src;
+            $this->image_url = Environment::get('url').'/'.$src;
         }
     }
 }

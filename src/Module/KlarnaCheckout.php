@@ -33,6 +33,7 @@ use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceExce
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class KlarnaCheckout extends Module
 {
@@ -131,16 +132,23 @@ class KlarnaCheckout extends Module
                         ),
                         'push'                   => System::getContainer()->get('router')->generate(
                             'richardhj.klarna_checkout.push',
-                            ['order_id' => '{checkout.order.id}']
+                            ['order_id' => '{checkout.order.id}'],
+                            UrlGeneratorInterface::ABSOLUTE_URL
                         ),
                         'shipping_option_update' => System::getContainer()->get('router')->generate(
-                            'richardhj.klarna_checkout.callback.address_update'
+                            'richardhj.klarna_checkout.callback.address_update',
+                            [],
+                            UrlGeneratorInterface::ABSOLUTE_URL
                         ),
                         'address_update'         => System::getContainer()->get('router')->generate(
-                            'richardhj.klarna_checkout.callback.address_update'
+                            'richardhj.klarna_checkout.callback.address_update',
+                            [],
+                            UrlGeneratorInterface::ABSOLUTE_URL
                         ),
                         'country_change'         => System::getContainer()->get('router')->generate(
-                            'richardhj.klarna_checkout.callback.country_change'
+                            'richardhj.klarna_checkout.callback.country_change',
+                            [],
+                            UrlGeneratorInterface::ABSOLUTE_URL
                         ),
                     ],
                     'shipping_options'  => $this->shippingOptions(),
@@ -152,7 +160,7 @@ class KlarnaCheckout extends Module
         $isotopeCart->klarna_order_id = $klarnaCheckout->getId();
         $isotopeCart->save();
 
-        $this->Template->gui = $klarnaCheckout->html_snippet;
+        $this->Template->gui = $klarnaCheckout['html_snippet'];
     }
 
     /**
@@ -228,9 +236,13 @@ class KlarnaCheckout extends Module
     {
         $page = PageModel::findById($pageId);
         if (null === $page) {
-            return '';
+            return null;
         }
 
-        return Environment::get('host').'/'.$page->getFrontendUrl($params);
+        if (null !== $params) {
+            $params = '?'.http_build_query($params);
+        }
+
+        return Environment::get('url').'/'.$page->getFrontendUrl($params);
     }
 }
