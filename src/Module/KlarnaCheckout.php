@@ -117,13 +117,13 @@ class KlarnaCheckout extends Module
             $klarnaCheckout = new KlarnaOrder($connector);
             $klarnaCheckout->create(
                 [
-                    'purchase_country'  => $config->country,
-                    'purchase_currency' => $config->currency,
-                    'locale'            => $request->getLocale(),
-                    'order_amount'      => $isotopeCart->getTotal() * 100,
-                    'order_tax_amount'  => ($isotopeCart->getTotal() - $isotopeCart->getTaxFreeTotal()) * 100,
-                    'order_lines'       => $this->orderLines(),
-                    'merchant_urls'     => [
+                    'purchase_country'   => $config->country,
+                    'purchase_currency'  => $config->currency,
+                    'locale'             => $request->getLocale(),
+                    'order_amount'       => $isotopeCart->getTotal() * 100,
+                    'order_tax_amount'   => ($isotopeCart->getTotal() - $isotopeCart->getTaxFreeTotal()) * 100,
+                    'order_lines'        => $this->orderLines(),
+                    'merchant_urls'      => [
                         'terms'                  => $this->uri($this->klarna_terms_page),
                         'checkout'               => $this->uri($this->klarna_checkout_page),
                         'confirmation'           => $this->uri(
@@ -151,7 +151,8 @@ class KlarnaCheckout extends Module
                             UrlGeneratorInterface::ABSOLUTE_URL
                         ),
                     ],
-                    'shipping_options'  => $this->shippingOptions(),
+                    'shipping_options'   => $this->shippingOptions(),
+                    'shipping_countries' => $config->getShippingCountries(),
                 ]
             );
         }
