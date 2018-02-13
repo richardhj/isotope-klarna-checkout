@@ -131,15 +131,15 @@ class KlarnaCheckout extends Module
                         ),
                         'push'                   => System::getContainer()->get('router')->generate(
                             'richardhj.klarna_checkout.push',
-                            ['{checkout.order.id}']
+                            ['order_id' => '{checkout.order.id}']
                         ),
                         'shipping_option_update' => System::getContainer()->get('router')->generate(
                             'richardhj.klarna_checkout.callback.address_update'
                         ),
-                        'address_update' => System::getContainer()->get('router')->generate(
+                        'address_update'         => System::getContainer()->get('router')->generate(
                             'richardhj.klarna_checkout.callback.address_update'
                         ),
-                        'country_change' => System::getContainer()->get('router')->generate(
+                        'country_change'         => System::getContainer()->get('router')->generate(
                             'richardhj.klarna_checkout.callback.country_change'
                         ),
                     ],
