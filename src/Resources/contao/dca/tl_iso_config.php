@@ -15,8 +15,8 @@ $GLOBALS['TL_DCA']['tl_iso_config']['palettes']['default'] .= ';{klarna_legend},
 
 $GLOBALS['TL_DCA']['tl_iso_config']['subpalettes']['use_klarna'] = 'klarna_api_username,klarna_api_password';
 
-$GLOBALS['TL_DCA']['tl_module']['fields']['use_klarna'] = [
-    'label'     => &$GLOBALS['TL_LANG']['tl_module']['use_klarna'],
+$GLOBALS['TL_DCA']['tl_iso_config']['fields']['use_klarna'] = [
+    'label'     => &$GLOBALS['TL_LANG']['tl_iso_config']['use_klarna'],
     'exclude'   => true,
     'inputType' => 'checkbox',
     'eval'      => [
@@ -26,8 +26,8 @@ $GLOBALS['TL_DCA']['tl_module']['fields']['use_klarna'] = [
     'sql'       => "varchar(64) NOT NULL default ''",
 ];
 
-$GLOBALS['TL_DCA']['tl_module']['fields']['klarna_api_username'] = [
-    'label'     => &$GLOBALS['TL_LANG']['tl_module']['klarna_api_username'],
+$GLOBALS['TL_DCA']['tl_iso_config']['fields']['klarna_api_username'] = [
+    'label'     => &$GLOBALS['TL_LANG']['tl_iso_config']['klarna_api_username'],
     'exclude'   => true,
     'inputType' => 'text',
     'eval'      => [
@@ -37,8 +37,8 @@ $GLOBALS['TL_DCA']['tl_module']['fields']['klarna_api_username'] = [
     'sql'       => "varchar(64) NOT NULL default ''",
 ];
 
-$GLOBALS['TL_DCA']['tl_module']['fields']['klarna_api_password'] = [
-    'label'     => &$GLOBALS['TL_LANG']['tl_module']['klarna_api_password'],
+$GLOBALS['TL_DCA']['tl_iso_config']['fields']['klarna_api_password'] = [
+    'label'     => &$GLOBALS['TL_LANG']['tl_iso_config']['klarna_api_password'],
     'exclude'   => true,
     'inputType' => 'text',
     'eval'      => [
