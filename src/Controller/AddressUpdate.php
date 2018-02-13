@@ -14,6 +14,7 @@
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 
+use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\Model;
 use Contao\ModuleModel;
 use Isotope\Isotope;
@@ -33,6 +34,7 @@ class AddressUpdate
      *
      * @return void
      *
+     * @throws PageNotFoundException If page is requested without data.
      * @throws \LogicException
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
@@ -40,6 +42,9 @@ class AddressUpdate
     public function __invoke(Request $request)
     {
         $data = json_decode($request->getContent());
+        if (null === $data) {
+            throw new PageNotFoundException('Page call not valid.');
+        }
 
         $shippingAddress = $data->shipping_address;
 
