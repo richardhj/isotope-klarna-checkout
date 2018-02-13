@@ -17,6 +17,7 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\Model;
 use Contao\ModuleModel;
+use Isotope\Isotope;
 use Isotope\Model\Address;
 use Isotope\Model\ProductCollection\Cart;
 use Isotope\Model\Shipping;
@@ -33,6 +34,11 @@ class AddressUpdate
      * @var KlarnaCheckoutModule
      */
     private $checkoutModule;
+
+    /**
+     * @var Cart
+     */
+    private $cart;
 
     /**
      * @param Request $request The request.
@@ -55,20 +61,20 @@ class AddressUpdate
 
         // FIXME this is ambigue as Klarna does not submit the order_id
         /** @var Cart|Model $cart */
-        $cart = Cart::findOneBy(
+        $this->cart = Cart::findOneBy(
             ['type=?', 'total=?', 'currency=?'],
             ['cart', $data->order_amount / 100, $data->purchase_currency],
             ['order' => 'tstamp DESC']
         );
 
-        $this->checkoutModule = ModuleModel::findById($cart->klarna_checkout_module);
+        $this->checkoutModule = ModuleModel::findById($this->cart->klarna_checkout_module);
 
-        $address = $cart->getShippingAddress();
-        $address = $address ?? Address::createForProductCollection($cart);
+        $address = $this->cart->getShippingAddress();
+        $address = $address ?? Address::createForProductCollection($this->cart);
         $address = $this->updateAddressByApiResponse($address, (array)$shippingAddress);
 
-        $cart->setShippingAddress($address);
-        $cart->save();
+        $this->cart->setShippingAddress($address);
+        $this->cart->save();
 
         // Since we updated the shipping address, now we can fetch the current shipping methods.
         $shippingOptions = $this->shippingOptions();
@@ -129,6 +135,9 @@ class AddressUpdate
         if (empty($ids) || !\is_array($ids)) {
             return [];
         }
+
+        // Set cart to prevent errors within available check
+        Isotope::setCart($this->cart);
 
         /** @var Shipping[] $shippingMethods */
         $shippingMethods = Shipping::findBy(['id IN ('.implode(',', $ids).')', "enabled='1'"], null);
