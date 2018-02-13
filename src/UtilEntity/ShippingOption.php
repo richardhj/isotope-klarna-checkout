@@ -107,6 +107,8 @@ final class ShippingOption
         $this->name            = $this->shipping->getLabel();
         $this->description     = $this->shipping->getNote();
         $this->price           = $this->shipping->getPrice();
+        $this->tax_amount      = 0;
+        $this->tax_rate        = 0;
         $this->shipping_method = self::METHOD_OWN;
 
         if (0 !== $this->price) {

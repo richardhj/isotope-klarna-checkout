@@ -53,6 +53,7 @@ class AddressUpdate
 
         $shippingAddress = $data->shipping_address;
 
+        // FIXME this is ambigue as Klarna does not submit the order_id
         /** @var Cart|Model $cart */
         $cart = Cart::findOneBy(
             ['type=?', 'total=?', 'currency=?'],

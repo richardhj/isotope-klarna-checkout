@@ -44,6 +44,7 @@ class CountryChange
         $billingAddress = $data->billing_address;
         $billingCountry = $billingAddress->country;
 
+        // FIXME this is ambigue as Klarna does not submit the order_id
         /** @var Cart|Model $cart */
         $cart = Cart::findOneBy(
             ['type=?', 'total=?', 'currency=?'],
