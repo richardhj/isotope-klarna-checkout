@@ -17,17 +17,22 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\Model;
 use Contao\ModuleModel;
-use Isotope\Isotope;
 use Isotope\Model\Address;
+use Isotope\Model\ProductCollection\Cart;
 use Isotope\Model\Shipping;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Module\KlarnaCheckout as KlarnaCheckoutModule;
 use Richardhj\IsotopeKlarnaCheckoutBundle\UtilEntity\ShippingOption;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\Session;
 
 class AddressUpdate
 {
+
+    /**
+     * @var KlarnaCheckoutModule
+     */
+    private $checkoutModule;
 
     /**
      * @param Request $request The request.
@@ -48,7 +53,15 @@ class AddressUpdate
 
         $shippingAddress = $data->shipping_address;
 
-        $cart    = Isotope::getCart();
+        /** @var Cart|Model $cart */
+        $cart = Cart::findOneBy(
+            ['type=?', 'total=?', 'currency=?'],
+            ['cart', $data->order_amount / 100, $data->purchase_currency],
+            ['order' => 'tstamp DESC']
+        );
+
+        $this->checkoutModule = ModuleModel::findById($cart->klarna_checkout_module);
+
         $address = $cart->getShippingAddress();
         $address = $address ?? Address::createForProductCollection($cart);
         $address = $this->updateAddressByApiResponse($address, (array)$shippingAddress);
@@ -109,16 +122,9 @@ class AddressUpdate
      */
     private function shippingOptions(): array
     {
-        $return  = [];
-        $session = new Session();
+        $return = [];
 
-        $checkoutModule = $session->get('ISO_CHECKOUT_MODULE');
-        if (!$checkoutModule) {
-            throw new \RuntimeException('Could not determine checkout module in use.');
-        }
-
-        $module = ModuleModel::findById($checkoutModule);
-        $ids    = deserialize($module->iso_shipping_modules);
+        $ids = deserialize($this->checkoutModule->iso_shipping_modules);
         if (empty($ids) || !\is_array($ids)) {
             return [];
         }

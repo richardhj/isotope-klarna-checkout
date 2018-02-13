@@ -155,6 +155,8 @@ class KlarnaCheckout extends Module
                     'shipping_countries' => $config->getShippingCountries(),
                 ]
             );
+
+            $isotopeCart->klarna_checkout_module = $this->id;
         }
 
         $klarnaCheckout->fetch();
@@ -174,9 +176,6 @@ class KlarnaCheckout extends Module
     private function shippingOptions(): array
     {
         $return = [];
-
-        $session = new Session();
-        $session->set('ISO_CHECKOUT_MODULE', $this->id);
 
         $ids = deserialize($this->iso_shipping_modules);
         if (empty($ids) || !\is_array($ids)) {

@@ -15,7 +15,8 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 
 use Contao\CoreBundle\Exception\PageNotFoundException;
-use Isotope\Isotope;
+use Contao\Model;
+use Isotope\Model\ProductCollection\Cart;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -43,9 +44,16 @@ class CountryChange
         $billingAddress = $data->billing_address;
         $billingCountry = $billingAddress->country;
 
-        $config = Isotope::getConfig();
-        $allowedCountries = $config->getBillingCountries();
+        /** @var Cart|Model $cart */
+        $cart = Cart::findOneBy(
+            ['type=?', 'total=?', 'currency=?'],
+            ['cart', $data->order_amount / 100, $data->purchase_currency],
+            ['order' => 'tstamp DESC']
+        );
 
+        $config = $cart->getConfig();
+
+        $allowedCountries = $config->getBillingCountries();
         if (!\in_array($billingCountry, $allowedCountries, true)) {
             $response = new JsonResponse(['error_type' => 'unsupported_shipping_address']);
             $response->setStatusCode(Response::HTTP_BAD_REQUEST);
