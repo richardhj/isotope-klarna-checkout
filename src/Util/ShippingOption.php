@@ -14,7 +14,11 @@
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Util;
 
 
+use Contao\Model;
 use Isotope\Interfaces\IsotopeShipping;
+use Isotope\Model\Shipping;
+use Isotope\Model\TaxClass;
+use Isotope\Model\TaxRate;
 
 final class ShippingOption
 {
@@ -27,7 +31,7 @@ final class ShippingOption
     const METHOD_OWN           = 'Own';
 
     /**
-     * @var IsotopeShipping
+     * @var IsotopeShipping|Shipping|Model
      */
     private $shipping;
 
@@ -107,14 +111,39 @@ final class ShippingOption
         $this->name            = $this->shipping->getLabel();
         $this->description     = $this->shipping->getNote();
         $this->price           = $this->shipping->getPrice() * 100;
-        $this->tax_amount      = 0;
-        $this->tax_rate        = 0;
         $this->shipping_method = self::METHOD_OWN;
 
         if (0 !== $this->price) {
             if ($this->shipping->isPercentage()) {
                 $this->name .= ' ('.$this->shipping->getPercentageLabel().')';
             }
+        }
+
+        $this->addTaxData();
+    }
+
+    /**
+     * Add tax_amount and tax_rate.
+     */
+    private function addTaxData()
+    {
+        $this->tax_amount = 0;
+        $this->tax_rate   = 0;
+
+        try {
+            /** @var TaxClass|Model $taxClass */
+            $taxClass = $this->shipping->getRelated('tax_class');
+            if (null === $taxClass) {
+                return;
+            }
+
+            /** @var TaxRate|Model $includes */
+            $includes = $taxClass->getRelated('includes');
+
+            $this->tax_rate   = $includes->rate['value'] * 100;
+            $this->tax_amount = $includes->calculateAmountIncludedInPrice($this->price) * 100;
+        } catch (\Exception $e) {
+            // :-/
         }
     }
 }
