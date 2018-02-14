@@ -93,7 +93,11 @@ class KlarnaCheckout extends Module
 
         $apiUsername = $config->klarna_api_username;
         $apiPassword = $config->klarna_api_password;
-        $connector   = KlarnaConnector::create($apiUsername, $apiPassword, ConnectorInterface::EU_TEST_BASE_URL);
+        $connector   = KlarnaConnector::create(
+            $apiUsername,
+            $apiPassword,
+            $config->klarna_api_test ? ConnectorInterface::EU_TEST_BASE_URL : ConnectorInterface::EU_BASE_URL
+        );
 
         $this->cart     = Isotope::getCart();
         $klarnaOrderId  = $this->cart->klarna_order_id;
