@@ -86,14 +86,13 @@ class AddressUpdate
             exit;
         }
 
-        $response = new JsonResponse(
-            [
-                'shipping_options' => $shippingOptions,
-                'order_amount'     => $this->cart->getTotal() * 100,
-                'order_tax_amount' => ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
-                'order_lines'      => $this->orderLines(),
-            ]
-        );
+        // Update order since shipping method may get updated
+        $data->shipping_options = $shippingOptions;
+        $data->order_amount     = $this->cart->getTotal() * 100;
+        $data->order_tax_amount = ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100;
+        $data->order_lines      = $this->orderLines();
+
+        $response = new JsonResponse($data);
         $response->send();
     }
 
