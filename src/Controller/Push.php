@@ -4,11 +4,12 @@
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 
-use Contao\System;
+use GuzzleHttp\Exception\RequestException;
 use Isotope\Model\ProductCollection\Order as IsotopeOrder;
 use Klarna\Rest\OrderManagement\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
+use Klarna\Rest\Transport\Exception\ConnectorException;
 use Symfony\Component\HttpFoundation\Request;
 
 class Push
@@ -24,8 +25,8 @@ class Push
      * @return void
      *
      * @throws \RuntimeException
-     * @throws \Klarna\Rest\Transport\Exception\ConnectorException
-     * @throws \GuzzleHttp\Exception\RequestException
+     * @throws ConnectorException
+     * @throws RequestException
      * @throws \LogicException If Klarna is not configured in the Isotope config.
      */
     public function __invoke($orderId, Request $request)
@@ -42,11 +43,13 @@ class Push
         $connector   = KlarnaConnector::create($apiUsername, $apiPassword, ConnectorInterface::EU_TEST_BASE_URL);
 
         $klarnaOrder = new KlarnaOrder($connector, $orderId);
+        if (!$isotopeOrder->isCheckoutComplete()) {
+            $klarnaOrder->cancel();
+
+            return;
+        }
+
         $klarnaOrder->acknowledge();
-
-        $isotopeOrder->checkout();
-        $isotopeOrder->complete();
-
         $klarnaOrder->updateMerchantReferences(
             [
                 'merchant_reference1' => $isotopeOrder->getUniqueId(),

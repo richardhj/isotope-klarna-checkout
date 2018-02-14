@@ -150,9 +150,11 @@ class KlarnaCheckoutConfirmation extends Module
         $selectedShipping = $klarnaCheckout['selected_shipping_option'];
         $isotopeOrder->setShippingMethod(Shipping::findByIdOrAlias($selectedShipping['id']));
 
-        // Save and lock order
+        // Save and complete order
         $isotopeOrder->save();
         $isotopeOrder->lock();
+        $isotopeOrder->checkout();
+        $isotopeOrder->complete();
 
         $this->Template->gui = $klarnaCheckout['html_snippet'];
     }
