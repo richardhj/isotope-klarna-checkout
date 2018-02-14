@@ -23,14 +23,12 @@ use Contao\System;
 use GuzzleHttp\Exception\RequestException;
 use Isotope\Isotope;
 use Isotope\Model\Config;
-use Isotope\Model\ProductCollection\Cart;
-use Isotope\Model\Shipping;
 use Klarna\Rest\Checkout\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
 use Klarna\Rest\Transport\Exception\ConnectorException;
-use Richardhj\IsotopeKlarnaCheckoutBundle\UtilEntity\OrderLine;
-use Richardhj\IsotopeKlarnaCheckoutBundle\UtilEntity\ShippingOption;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetShippingOptionsTrait;
 use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\HttpFoundation\Request;
@@ -38,6 +36,9 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class KlarnaCheckout extends Module
 {
+
+    use GetOrderLinesTrait;
+    use GetShippingOptionsTrait;
 
     /**
      * Template
@@ -94,9 +95,8 @@ class KlarnaCheckout extends Module
         $apiPassword = $config->klarna_api_password;
         $connector   = KlarnaConnector::create($apiUsername, $apiPassword, ConnectorInterface::EU_TEST_BASE_URL);
 
-        /** @var Cart|Model $isotopeCart */
-        $isotopeCart    = Isotope::getCart();
-        $klarnaOrderId  = $isotopeCart->klarna_order_id;
+        $this->cart     = Isotope::getCart();
+        $klarnaOrderId  = $this->cart->klarna_order_id;
         $klarnaCheckout = null;
 
         if ($klarnaOrderId) {
@@ -105,8 +105,8 @@ class KlarnaCheckout extends Module
             try {
                 $klarnaCheckout->update(
                     [
-                        'order_amount'     => $isotopeCart->getTotal() * 100,
-                        'order_tax_amount' => ($isotopeCart->getTotal() - $isotopeCart->getTaxFreeTotal()) * 100,
+                        'order_amount'     => $this->cart->getTotal() * 100,
+                        'order_tax_amount' => ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
                         'order_lines'      => $this->orderLines(),
                     ]
                 );
@@ -125,8 +125,8 @@ class KlarnaCheckout extends Module
                     'purchase_country'   => $config->country,
                     'purchase_currency'  => $config->currency,
                     'locale'             => $request->getLocale(),
-                    'order_amount'       => $isotopeCart->getTotal() * 100,
-                    'order_tax_amount'   => ($isotopeCart->getTotal() - $isotopeCart->getTaxFreeTotal()) * 100,
+                    'order_amount'       => $this->cart->getTotal() * 100,
+                    'order_tax_amount'   => ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
                     'order_lines'        => $this->orderLines(),
                     'merchant_urls'      => [
                         'terms'                  => $this->uri($this->klarna_terms_page),
@@ -156,77 +156,19 @@ class KlarnaCheckout extends Module
                             UrlGeneratorInterface::ABSOLUTE_URL
                         ),
                     ],
-                    'shipping_options'   => $this->shippingOptions(),
+                    'shipping_options'   => $this->shippingOptions(deserialize($this->iso_shipping_modules, true)),
                     'shipping_countries' => $config->getShippingCountries(),
                 ]
             );
 
-            $isotopeCart->klarna_checkout_module = $this->id;
+            $this->cart->klarna_checkout_module = $this->id;
         }
 
         $klarnaCheckout->fetch();
-        $isotopeCart->klarna_order_id = $klarnaCheckout->getId();
-        $isotopeCart->save();
+        $this->cart->klarna_order_id = $klarnaCheckout->getId();
+        $this->cart->save();
 
         $this->Template->gui = $klarnaCheckout['html_snippet'];
-    }
-
-    /**
-     * Get the shipping options as api-conform array.
-     *
-     * @return array
-     *
-     * @throws \RuntimeException
-     */
-    private function shippingOptions(): array
-    {
-        $return = [];
-
-        $ids = deserialize($this->iso_shipping_modules);
-        if (empty($ids) || !\is_array($ids)) {
-            return [];
-        }
-
-        /** @var Shipping[] $shippingMethods */
-        $shippingMethods = Shipping::findBy(['id IN ('.implode(',', $ids).')', "enabled='1'"], null);
-        if (null !== $shippingMethods) {
-            foreach ($shippingMethods as $shippingMethod) {
-                if (!$shippingMethod->isAvailable()) {
-                    continue;
-                }
-
-                $return[] = get_object_vars(ShippingOption::createForShippingMethod($shippingMethod));
-            }
-        }
-
-        return $return;
-    }
-
-    /**
-     * Return the items in the cart as api-conform array.
-     *
-     * @return array
-     */
-    private function orderLines(): array
-    {
-        $return = [];
-
-        $cart = Isotope::getCart();
-        if (null === $cart) {
-            return [];
-        }
-
-        foreach ($cart->getItems() as $item) {
-            $return[] = get_object_vars(OrderLine::createFromItem($item));
-        }
-
-        foreach ($cart->getSurcharges() as $surcharge) {
-            if ($surcharge->addToTotal) {
-                $return[] = get_object_vars(OrderLine::createForSurcharge($surcharge));
-            }
-        }
-
-        return $return;
     }
 
     /**

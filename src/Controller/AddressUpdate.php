@@ -17,13 +17,11 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\Model;
 use Contao\ModuleModel;
-use Isotope\Isotope;
 use Isotope\Model\Address;
 use Isotope\Model\ProductCollection\Cart;
-use Isotope\Model\Shipping;
-use Richardhj\IsotopeKlarnaCheckoutBundle\Module\KlarnaCheckout as KlarnaCheckoutModule;
-use Richardhj\IsotopeKlarnaCheckoutBundle\UtilEntity\OrderLine;
-use Richardhj\IsotopeKlarnaCheckoutBundle\UtilEntity\ShippingOption;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetShippingOptionsTrait;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\UpdateAddressTrait;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,15 +29,9 @@ use Symfony\Component\HttpFoundation\Response;
 class AddressUpdate
 {
 
-    /**
-     * @var KlarnaCheckoutModule
-     */
-    private $checkoutModule;
-
-    /**
-     * @var Cart
-     */
-    private $cart;
+    use GetOrderLinesTrait;
+    use GetShippingOptionsTrait;
+    use UpdateAddressTrait;
 
     /**
      * @param Request $request The request.
@@ -68,7 +60,7 @@ class AddressUpdate
             ['order' => 'tstamp DESC']
         );
 
-        $this->checkoutModule = ModuleModel::findById($this->cart->klarna_checkout_module);
+        $checkoutModule = ModuleModel::findById($this->cart->klarna_checkout_module);
 
         $address = $this->cart->getShippingAddress();
         $address = $address ?? Address::createForProductCollection($this->cart);
@@ -78,7 +70,7 @@ class AddressUpdate
         $this->cart->save();
 
         // Since we updated the shipping address, now we can fetch the current shipping methods.
-        $shippingOptions = $this->shippingOptions();
+        $shippingOptions = $this->shippingOptions(deserialize($checkoutModule->iso_shipping_modules, true));
         if ([] === $shippingOptions) {
             $response = new JsonResponse(['error_type' => 'unsupported_shipping_address']);
             $response->setStatusCode(Response::HTTP_BAD_REQUEST);
@@ -94,110 +86,5 @@ class AddressUpdate
 
         $response = new JsonResponse($data);
         $response->send();
-    }
-
-    /**
-     * @param Address|Model $address
-     * @param array         $data
-     *
-     * @return Address
-     *
-     * @throws \RuntimeException
-     * @throws \InvalidArgumentException
-     */
-    private function updateAddressByApiResponse(Address $address, array $data): Address
-    {
-        $address->company    = $data['organization_name'];
-        $address->firstname  = $data['given_name'];
-        $address->lastname   = $data['family_name'];
-        $address->email      = $data['email'];
-        $address->salutation = $data['title'];
-        $address->street_1   = $data['street_address'];
-        $address->street_2   = $data['street_address2'];
-        $address->postal     = $data['postal_code'];
-        $address->city       = $data['city'];
-        $address->country    = $data['country'];
-
-        $address->save();
-
-        return $address;
-    }
-
-    /**
-     * Get the shipping options as api-conform array.
-     *
-     * @return array
-     *
-     * @throws \RuntimeException
-     */
-    private function shippingOptions(): array
-    {
-        $ids = deserialize($this->checkoutModule->iso_shipping_modules);
-        if (empty($ids) || !\is_array($ids)) {
-            return [];
-        }
-
-        // Set cart to prevent errors within available check
-        Isotope::setCart($this->cart);
-
-        $methods = [];
-        /** @var Shipping[] $shippingMethods */
-        $shippingMethods = Shipping::findBy(['id IN ('.implode(',', $ids).')', "enabled='1'"], null);
-        if (null !== $shippingMethods) {
-            foreach ($shippingMethods as $shippingMethod) {
-                if (!$shippingMethod->isAvailable()) {
-                    continue;
-                }
-
-                $methods[] = $shippingMethod;
-            }
-
-            // Add the default shipping address to the cart
-            if (1 === \count($methods)) {
-                $this->cart->setShippingMethod($methods[0]);
-            }
-        }
-
-        return array_map(
-            function (Shipping $shipping) {
-                return get_object_vars(ShippingOption::createForShippingMethod($shipping));
-            },
-            $methods
-        );
-    }
-
-
-    /**
-     * Return the items in the cart as api-conform array.
-     *
-     * @return array
-     */
-    private function orderLines(): array
-    {
-        $return = [];
-
-        if (null === $this->cart) {
-            return [];
-        }
-
-        foreach ($this->cart->getItems() as $item) {
-            $return[] = get_object_vars(OrderLine::createFromItem($item));
-        }
-
-        $surcharges = $this->cart->getSurcharges();
-        if (null !== ($paymentSurcharge = $this->cart->getShippingSurcharge())) {
-            $surcharges[] = $paymentSurcharge;
-        }
-        if (null !== ($paymentSurcharge = $this->cart->getPaymentSurcharge())) {
-            $surcharges[] = $paymentSurcharge;
-        }
-
-        foreach ($surcharges as $surcharge) {
-            if ($surcharge->addToTotal) {
-                $return[] = get_object_vars(OrderLine::createForSurcharge($surcharge));
-            }
-        }
-
-        return $return;
     }
 }

@@ -29,12 +29,15 @@ use Isotope\Model\Shipping;
 use Klarna\Rest\Checkout\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\UpdateAddressTrait;
 use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\HttpFoundation\Request;
 
 class KlarnaCheckoutConfirmation extends Module
 {
+
+    use UpdateAddressTrait;
 
     /**
      * Template
@@ -150,32 +153,5 @@ class KlarnaCheckoutConfirmation extends Module
         $isotopeOrder->lock();
 
         $this->Template->gui = $klarnaCheckout['html_snippet'];
-    }
-
-    /**
-     * @param Address|Model $address
-     * @param array         $data
-     *
-     * @return Address
-     *
-     * @throws \RuntimeException
-     * @throws \InvalidArgumentException
-     */
-    private function updateAddressByApiResponse(Address $address, array $data): Address
-    {
-        $address->company    = $data['organization_name'];
-        $address->firstname  = $data['given_name'];
-        $address->lastname   = $data['family_name'];
-        $address->email      = $data['email'];
-        $address->salutation = $data['title'];
-        $address->street_1   = $data['street_address'];
-        $address->street_2   = $data['street_address2'];
-        $address->postal     = $data['postal_code'];
-        $address->city       = $data['city'];
-        $address->country    = $data['country'];
-
-        $address->save();
-
-        return $address;
     }
 }

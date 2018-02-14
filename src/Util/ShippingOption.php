@@ -11,7 +11,7 @@
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
-namespace Richardhj\IsotopeKlarnaCheckoutBundle\UtilEntity;
+namespace Richardhj\IsotopeKlarnaCheckoutBundle\Util;
 
 
 use Isotope\Interfaces\IsotopeShipping;

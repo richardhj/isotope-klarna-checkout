@@ -18,17 +18,14 @@ use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\Model;
 use Isotope\Model\ProductCollection\Cart;
 use Isotope\Model\Shipping;
-use Richardhj\IsotopeKlarnaCheckoutBundle\UtilEntity\OrderLine;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
 class ShippingOptionUpdate
 {
 
-    /**
-     * @var Cart
-     */
-    private $cart;
+    use GetOrderLinesTrait;
 
     /**
      * @param Request $request The request.
@@ -66,32 +63,5 @@ class ShippingOptionUpdate
 
         $response = new JsonResponse($data);
         $response->send();
-    }
-
-
-    /**
-     * Return the items in the cart as api-conform array.
-     *
-     * @return array
-     */
-    private function orderLines(): array
-    {
-        $return = [];
-
-        if (null === $this->cart) {
-            return [];
-        }
-
-        foreach ($this->cart->getItems() as $item) {
-            $return[] = get_object_vars(OrderLine::createFromItem($item));
-        }
-
-        foreach ($this->cart->getSurcharges() as $surcharge) {
-            if ($surcharge->addToTotal) {
-                $return[] = get_object_vars(OrderLine::createForSurcharge($surcharge));
-            }
-        }
-
-        return $return;
     }
 }
