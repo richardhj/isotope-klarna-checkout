@@ -4,10 +4,7 @@
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 
-use Contao\Model;
 use Contao\System;
-use Isotope\Isotope;
-use Isotope\Model\Config;
 use Isotope\Model\ProductCollection\Order as IsotopeOrder;
 use Klarna\Rest\OrderManagement\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
@@ -30,8 +27,9 @@ class Push
      */
     public function __invoke($orderId, Request $request)
     {
-        /** @var Config|Model $config */
-        $config = Isotope::getConfig();
+        $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $orderId);
+
+        $config = $isotopeOrder->getConfig();
         if (!$config->use_klarna) {
             throw new \LogicException('Klarna is not configured in the Isotope config.');
         }
@@ -42,7 +40,6 @@ class Push
 
         $klarnaOrder = new KlarnaOrder($connector, $orderId);
 
-        $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $orderId);
         if (false === $this->checkPreCheckoutHook($isotopeOrder)) {
             $klarnaOrder->cancel();
 
@@ -56,7 +53,7 @@ class Push
         $klarnaOrder->updateMerchantReferences(
             [
                 'merchant_reference1' => $isotopeOrder->getUniqueId(),
-                'merchant_reference2' => $isotopeOrder->getDocumentNumber()
+                'merchant_reference2' => $isotopeOrder->getDocumentNumber(),
             ]
         );
     }
