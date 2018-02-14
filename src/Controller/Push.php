@@ -42,14 +42,8 @@ class Push
         $connector   = KlarnaConnector::create($apiUsername, $apiPassword, ConnectorInterface::EU_TEST_BASE_URL);
 
         $klarnaOrder = new KlarnaOrder($connector, $orderId);
-
-        if (false === $this->checkPreCheckoutHook($isotopeOrder)) {
-            $klarnaOrder->cancel();
-
-            return;
-        }
-
         $klarnaOrder->acknowledge();
+
         $isotopeOrder->checkout();
         $isotopeOrder->complete();
 
@@ -59,30 +53,5 @@ class Push
                 'merchant_reference2' => $isotopeOrder->getDocumentNumber(),
             ]
         );
-    }
-
-    /**
-     * Call the pre checkout hook.
-     * As of the default logic, a `false` return value requires to cancel the order.
-     *
-     * @param IsotopeOrder $order
-     *
-     * @return bool
-     */
-    private function checkPreCheckoutHook(IsotopeOrder $order): bool
-    {
-        if (isset($GLOBALS['ISO_HOOKS']['preCheckout']) && \is_array($GLOBALS['ISO_HOOKS']['preCheckout'])) {
-            foreach ($GLOBALS['ISO_HOOKS']['preCheckout'] as $callback) {
-                try {
-                    return System::importStatic($callback[0])->{$callback[1]}($order, $this);
-                } catch (\Exception $e) {
-                    // The callback most probably required $this to be an instance of \Isotope\Module\Checkout.
-                    // Nothing we can do about it here.
-                }
-            }
-        }
-
-        // Don't cancel the order per default.
-        return true;
     }
 }

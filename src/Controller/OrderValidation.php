@@ -15,8 +15,12 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 
 use Contao\CoreBundle\Exception\PageNotFoundException;
+use Contao\System;
+use Isotope\Model\ProductCollection\Order as IsotopeOrder;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Translation\Translator;
 
 class OrderValidation
 {
@@ -42,9 +46,45 @@ class OrderValidation
             throw new PageNotFoundException('Page call not valid.');
         }
 
-        // FIXME not implemented
+        $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $data->order_id);
 
         $response = new JsonResponse([]);
+        if (false === $this->checkPreCheckoutHook($isotopeOrder)) {
+            $response = new JsonResponse(
+                [
+                    'error_type' => 'address_error',
+//                    'error_text' => $this->translator->trans('ERR.orderFailed', null, $data->locale),
+                    'error_text' => $GLOBALS['TL_LANG']['ERR']['orderFailed'],
+                ]
+            );
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        }
+
         $response->send();
+    }
+
+    /**
+     * Call the pre checkout hook.
+     * As of the default logic, a `false` return value requires to cancel the order.
+     *
+     * @param IsotopeOrder $order
+     *
+     * @return bool
+     */
+    private function checkPreCheckoutHook(IsotopeOrder $order): bool
+    {
+        if (isset($GLOBALS['ISO_HOOKS']['preCheckout']) && \is_array($GLOBALS['ISO_HOOKS']['preCheckout'])) {
+            foreach ($GLOBALS['ISO_HOOKS']['preCheckout'] as $callback) {
+                try {
+                    return System::importStatic($callback[0])->{$callback[1]}($order, $this);
+                } catch (\Exception $e) {
+                    // The callback most probably required $this to be an instance of \Isotope\Module\Checkout.
+                    // Nothing we can do about it here.
+                }
+            }
+        }
+
+        // Don't cancel the order per default.
+        return true;
     }
 }
