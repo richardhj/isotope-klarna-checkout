@@ -13,5 +13,5 @@
 
 
 $GLOBALS['TL_DCA']['tl_iso_product_collection']['fields']['klarna_order_id'] = [
-    'sql' => "varchar(64) NOT NULL default ''",
+    'sql' => "varchar(255) NOT NULL default ''",
 ];
