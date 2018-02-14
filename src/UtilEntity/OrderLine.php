@@ -198,6 +198,7 @@ final class OrderLine
         switch (true) {
             case $this->surcharge instanceof ProductCollectionSurcharge\Shipping:
                 $this->type = self::TYPE_SHIPPING_FEE;
+                $this->name = $this->name ?: 'Shipping';
                 break;
 
             case $this->surcharge instanceof ProductCollectionSurcharge\Tax:
