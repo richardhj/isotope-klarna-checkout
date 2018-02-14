@@ -15,6 +15,9 @@ class Push
 {
 
     /**
+     * Will be called post checkout, approximately 2 minutes after the user have been displayed the checkout
+     * confirmation. This controller will i.a. complete the order and trigger the notifications.
+     *
      * @param integer $orderId The checkout order id.
      * @param Request $request The request.
      *

@@ -15,18 +15,16 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 
 use Contao\CoreBundle\Exception\PageNotFoundException;
-use Contao\Model;
-use Isotope\Model\ProductCollection\Cart;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 
-class CountryChange
+class OrderValidation
 {
 
     /**
-     * Will be called whenever the consumer changes billing address country.
-     * The response will contain an error if the billing country is not supported as per shop config.
+     * Will be called before completing the purchase to validate the information provided by the consumer in Klarna's
+     * Checkout iframe.
+     * The response will redirect to an error page if the preCheckout hook will fail.
      *
      * @param Request $request The request.
      *
@@ -44,26 +42,7 @@ class CountryChange
             throw new PageNotFoundException('Page call not valid.');
         }
 
-        $billingAddress = $data->billing_address;
-        $billingCountry = $billingAddress->country;
-
-        // FIXME this is ambigue as Klarna does not submit the order_id
-        /** @var Cart|Model $cart */
-        $cart = Cart::findOneBy(
-            ['type=?', 'total=?', 'currency=?'],
-            ['cart', $data->order_amount / 100, $data->purchase_currency],
-            ['order' => 'tstamp DESC']
-        );
-
-        $config = $cart->getConfig();
-
-        $allowedCountries = $config->getBillingCountries();
-        if (!\in_array($billingCountry, $allowedCountries, true)) {
-            $response = new JsonResponse(['error_type' => 'unsupported_shipping_address']);
-            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-            $response->send();
-            exit;
-        }
+        // FIXME not implemented
 
         $response = new JsonResponse([]);
         $response->send();

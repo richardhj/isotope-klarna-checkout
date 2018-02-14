@@ -28,6 +28,9 @@ class ShippingOptionUpdate
     use GetOrderLinesTrait;
 
     /**
+     * Will be called whenever the consumer selects a shipping option.
+     * The response will contain the updated order_lines due of added shipping_fee.
+     *
      * @param Request $request The request.
      *
      * @return void

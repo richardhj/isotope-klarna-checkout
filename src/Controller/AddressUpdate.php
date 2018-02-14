@@ -34,6 +34,9 @@ class AddressUpdate
     use UpdateAddressTrait;
 
     /**
+     * Will be called whenever the consumer changes billing or shipping address.
+     * The response contains the updated shipping options.
+     *
      * @param Request $request The request.
      *
      * @return void

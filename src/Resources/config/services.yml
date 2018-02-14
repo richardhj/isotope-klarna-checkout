@@ -10,3 +10,6 @@ services:
 
     richardhj.klarna_checkout.controller.callback.shipping_option_update:
         class: Richardhj\IsotopeKlarnaCheckoutBundle\Controller\ShippingOptionUpdate
+
+    richardhj.klarna_checkout.controller.callback.order_validation:
+        class: Richardhj\IsotopeKlarnaCheckoutBundle\Controller\OrderValidation

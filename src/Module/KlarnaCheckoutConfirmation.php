@@ -22,6 +22,7 @@ use Contao\Module;
 use Contao\PageModel;
 use Contao\System;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\RequestException;
 use Isotope\Isotope;
 use Isotope\Model\Address;
 use Isotope\Model\Config;
@@ -76,8 +77,9 @@ class KlarnaCheckoutConfirmation extends Module
      *
      * @return void
      *
-     * @throws \GuzzleHttp\Exception\RequestException
-     * @throws \Contao\CoreBundle\Exception\PageNotFoundException
+     * @throws ClientException
+     * @throws RequestException
+     * @throws PageNotFoundException If order is not found in Klarna system.
      * @throws RedirectResponseException If the checkout is not completed yet.
      * @throws \RuntimeException
      * @throws \Klarna\Rest\Transport\Exception\ConnectorException
@@ -108,7 +110,7 @@ class KlarnaCheckoutConfirmation extends Module
             if (404 === $e->getResponse()->getStatusCode()) {
                 throw new PageNotFoundException('Order not found: ID '.$orderId);
             }
-            return;
+            throw $e;
         }
 
         if ('checkout_incomplete' === $klarnaCheckout['status']) {

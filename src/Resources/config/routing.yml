@@ -25,3 +25,10 @@ richardhj.klarna_checkout.callback.shipping_option_update:
         _scope: frontend
         _token_check: false
         _controller: richardhj.klarna_checkout.controller.callback.shipping_option_update
+
+richardhj.klarna_checkout.callback.order_validation:
+    path: /kco/callback/order_validation
+    defaults:
+        _scope: frontend
+        _token_check: false
+        _controller: richardhj.klarna_checkout.controller.callback.order_validation
