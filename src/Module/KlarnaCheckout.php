@@ -155,6 +155,11 @@ class KlarnaCheckout extends Module
                             [],
                             UrlGeneratorInterface::ABSOLUTE_URL
                         ),
+                        'order_validation'       => System::getContainer()->get('router')->generate(
+                            'richardhj.klarna_checkout.callback.order_validation',
+                            [],
+                            UrlGeneratorInterface::ABSOLUTE_URL
+                        ),
                     ],
                     'shipping_options'   => $this->shippingOptions(deserialize($this->iso_shipping_modules, true)),
                     'shipping_countries' => $config->getShippingCountries(),
