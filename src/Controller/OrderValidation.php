@@ -20,7 +20,6 @@ use Isotope\Model\ProductCollection\Order as IsotopeOrder;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Translation\Translator;
 
 class OrderValidation
 {
