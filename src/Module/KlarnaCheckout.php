@@ -20,6 +20,7 @@ use Contao\Model;
 use Contao\Module;
 use Contao\PageModel;
 use Contao\System;
+use GuzzleHttp\Exception\RequestException;
 use Isotope\Isotope;
 use Isotope\Model\Config;
 use Isotope\Model\ProductCollection\Cart;
@@ -27,12 +28,12 @@ use Isotope\Model\Shipping;
 use Klarna\Rest\Checkout\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
+use Klarna\Rest\Transport\Exception\ConnectorException;
 use Richardhj\IsotopeKlarnaCheckoutBundle\UtilEntity\OrderLine;
 use Richardhj\IsotopeKlarnaCheckoutBundle\UtilEntity\ShippingOption;
 use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class KlarnaCheckout extends Module
@@ -73,11 +74,11 @@ class KlarnaCheckout extends Module
     /**
      * Compile the current element
      *
+     * @throws RequestException
+     * @throws ConnectorException
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
      * @throws \LogicException
-     * @throws \Klarna\Rest\Transport\Exception\ConnectorException
-     * @throws \GuzzleHttp\Exception\RequestException
      * @throws ServiceNotFoundException
      * @throws ServiceCircularReferenceException
      */
@@ -101,13 +102,17 @@ class KlarnaCheckout extends Module
         if ($klarnaOrderId) {
             // Resume, just make the sure the cart is up to date
             $klarnaCheckout = new KlarnaOrder($connector, $klarnaOrderId);
-            $klarnaCheckout->update(
-                [
-                    'order_amount'     => $isotopeCart->getTotal() * 100,
-                    'order_tax_amount' => ($isotopeCart->getTotal() - $isotopeCart->getTaxFreeTotal()) * 100,
-                    'order_lines'      => $this->orderLines(),
-                ]
-            );
+            try {
+                $klarnaCheckout->update(
+                    [
+                        'order_amount'     => $isotopeCart->getTotal() * 100,
+                        'order_tax_amount' => ($isotopeCart->getTotal() - $isotopeCart->getTaxFreeTotal()) * 100,
+                        'order_lines'      => $this->orderLines(),
+                    ]
+                );
+            } catch (RequestException $e) {
+                $klarnaCheckout = null;
+            }
         }
 
         if (null === $klarnaCheckout) {
