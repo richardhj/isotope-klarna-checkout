@@ -16,6 +16,7 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Util;
 
 use Contao\Model;
 use Isotope\Model\Address;
+use function Sodium\add;
 
 trait UpdateAddressTrait
 {
@@ -45,5 +46,26 @@ trait UpdateAddressTrait
         $address->save();
 
         return $address;
+    }
+
+    /**
+     * @param Address $address
+     *
+     * @return array
+     */
+    private function getApiDataFromAddress(Address $address): array
+    {
+        return [
+            'organization_name' => $address->company,
+            'given_name'        => $address->firstname,
+            'family_name'       => $address->lastname,
+            'email'             => $address->email,
+            'title'             => $address->salutation,
+            'street_address'    => $address->street_1,
+            'street_address2'   => $address->street_2,
+            'postal_code'       => $address->postal,
+            'city'              => $address->city,
+            'country'           => $address->country,
+        ];
     }
 }
