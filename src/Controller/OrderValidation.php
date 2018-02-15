@@ -16,6 +16,7 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\System;
+use Isotope\Isotope;
 use Isotope\Model\ProductCollection\Cart as IsotopeCart;
 use Isotope\Model\ProductCollection\Order as IsotopeOrder;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\CanCheckoutTrait;
@@ -49,10 +50,11 @@ class OrderValidation
             throw new PageNotFoundException('Page call not valid.');
         }
 
-        // Create order
-        $this->cart   = IsotopeCart::findOneBy('klarna_order_id', $data->order_id);
-        $isotopeOrder = $this->cart->getDraftOrder();
+        $this->cart = IsotopeCart::findOneBy('klarna_order_id', $data->order_id);
+        Isotope::setCart($this->cart);
 
+        // Create order
+        $isotopeOrder                  = $this->cart->getDraftOrder();
         $isotopeOrder->klarna_order_id = $data->order_id;
 
         if (false === $this->checkPreCheckoutHook($isotopeOrder) || false === $this->canCheckout()) {
