@@ -18,6 +18,7 @@ use Contao\BackendTemplate;
 use Contao\Controller;
 use Contao\CoreBundle\Exception\NoRootPageFoundException;
 use Contao\Environment;
+use Contao\FrontendUser;
 use Contao\Model;
 use Contao\Module;
 use Contao\ModuleModel;
@@ -58,6 +59,11 @@ class KlarnaCheckout extends Module
     private $config;
 
     /**
+     * @var FrontendUser
+     */
+    private $user;
+
+    /**
      * KlarnaCheckout constructor.
      *
      * @param ModuleModel $module
@@ -69,6 +75,7 @@ class KlarnaCheckout extends Module
 
         $this->config = Isotope::getConfig();
         $this->cart   = Isotope::getCart();
+        $this->user   = FrontendUser::getInstance();
     }
 
     /**
@@ -206,6 +213,30 @@ class KlarnaCheckout extends Module
                         ],
                         'shipping_options'   => $this->shippingOptions(deserialize($this->iso_shipping_modules, true)),
                         'shipping_countries' => $this->config->getShippingCountries(),
+                        'options'            => [
+                            'allow_separate_shipping_address'   => [] !== $this->config->getShippingFields(),
+                            'color_button'                      => $this->klarna_color_button
+                                ? '#'.$this->klarna_color_button
+                                : null,
+                            'color_button_text'                 => $this->klarna_color_button_text
+                                ? '#'.$this->klarna_color_button_text
+                                : null,
+                            'color_checkbox'                    => $this->klarna_color_checkbox
+                                ? '#'.$this->klarna_color_checkbox
+                                : null,
+                            'color_checkbox_checkmark'          => $this->klarna_color_checkbox_checkmark
+                                ? '#'.$this->klarna_color_checkbox_checkmark
+                                : null,
+                            'color_header'                      => $this->klarna_color_header
+                                ? '#'.$this->klarna_color_header
+                                : null,
+                            'color_link'                        => $this->klarna_color_link
+                                ? '#'.$this->klarna_color_link
+                                : null,
+                            'require_validate_callback_success' => true,
+                            'show_subtotal_detail'              => (bool)$this->klarna_show_subtotal_detail,
+                        ],
+                        'merchant_data'      => http_build_query(['member' => $this->user->id ?? null]),
                     ]
                 );
 

@@ -12,8 +12,9 @@
  */
 
 $GLOBALS['TL_DCA']['tl_module']['palettes']['iso_klarna_checkout'] = '{title_legend},name,headline,type;'
-                                                                     .'{config_legend},iso_shipping_modules,nc_notification;'
+                                                                     .'{config_legend},iso_shipping_modules,nc_notification,klarna_show_subtotal_detail;'
                                                                      .'{redirect_legend},iso_cart_jumpTo,klarna_terms_page,klarna_checkout_page,klarna_confirmation_page,klarna_cancellation_page;'
+                                                                     .'{colors_legend},klarna_color_button,klarna_color_button_text,klarna_color_checkbox,klarna_color_checkbox_checkmark,klarna_color_header,klarna_color_link;'
                                                                      .'{template_legend},customTpl;'
                                                                      .'{protected_legend:hide},protected;'
                                                                      .'{expert_legend:hide},guests,cssID';
@@ -23,6 +24,16 @@ $GLOBALS['TL_DCA']['tl_module']['palettes']['iso_klarna_checkout_confirmation'] 
                                                                                   .'{template_legend},customTpl;'
                                                                                   .'{protected_legend:hide},protected;'
                                                                                   .'{expert_legend:hide},guests,cssID';
+
+$GLOBALS['TL_DCA']['tl_module']['fields']['klarna_show_subtotal_detail'] = [
+    'label'     => &$GLOBALS['TL_LANG']['tl_module']['klarna_show_subtotal_detail'],
+    'exclude'   => true,
+    'inputType' => 'checkbox',
+    'eval'      => [
+        'tl_class' => 'w50',
+    ],
+    'sql'       => "char(11) NOT NULL default ''",
+];
 
 $GLOBALS['TL_DCA']['tl_module']['fields']['klarna_terms_page'] = [
     'label'      => &$GLOBALS['TL_LANG']['tl_module']['klarna_terms_page'],
@@ -89,4 +100,94 @@ $GLOBALS['TL_DCA']['tl_module']['fields']['klarna_cancellation_page'] = [
         'type' => 'hasOne',
         'load' => 'lazy',
     ],
+];
+
+$GLOBALS['TL_DCA']['tl_module']['fields']['klarna_color_button'] = [
+    'label'     => &$GLOBALS['TL_LANG']['tl_module']['klarna_color_button'],
+    'exclude'   => true,
+    'inputType' => 'text',
+    'eval'      => [
+        'minlength'      => 6,
+        'maxlength'      => 6,
+        'colorpicker'    => true,
+        'isHexColor'     => true,
+        'decodeEntities' => true,
+        'tl_class'       => 'w50 wizard',
+    ],
+    'sql'       => "varchar(6) NOT NULL default ''",
+];
+
+$GLOBALS['TL_DCA']['tl_module']['fields']['klarna_color_button_text'] = [
+    'label'     => &$GLOBALS['TL_LANG']['tl_module']['klarna_color_button_text'],
+    'exclude'   => true,
+    'inputType' => 'text',
+    'eval'      => [
+        'minlength'      => 6,
+        'maxlength'      => 6,
+        'colorpicker'    => true,
+        'isHexColor'     => true,
+        'decodeEntities' => true,
+        'tl_class'       => 'w50 wizard',
+    ],
+    'sql'       => "varchar(6) NOT NULL default ''",
+];
+
+$GLOBALS['TL_DCA']['tl_module']['fields']['klarna_color_checkbox'] = [
+    'label'     => &$GLOBALS['TL_LANG']['tl_module']['klarna_color_checkbox'],
+    'exclude'   => true,
+    'inputType' => 'text',
+    'eval'      => [
+        'minlength'      => 6,
+        'maxlength'      => 6,
+        'colorpicker'    => true,
+        'isHexColor'     => true,
+        'decodeEntities' => true,
+        'tl_class'       => 'w50 wizard',
+    ],
+    'sql'       => "varchar(6) NOT NULL default ''",
+];
+
+$GLOBALS['TL_DCA']['tl_module']['fields']['klarna_color_checkbox_checkmark'] = [
+    'label'     => &$GLOBALS['TL_LANG']['tl_module']['klarna_color_checkbox_checkmark'],
+    'exclude'   => true,
+    'inputType' => 'text',
+    'eval'      => [
+        'minlength'      => 6,
+        'maxlength'      => 6,
+        'colorpicker'    => true,
+        'isHexColor'     => true,
+        'decodeEntities' => true,
+        'tl_class'       => 'w50 wizard',
+    ],
+    'sql'       => "varchar(6) NOT NULL default ''",
+];
+
+$GLOBALS['TL_DCA']['tl_module']['fields']['klarna_color_header'] = [
+    'label'     => &$GLOBALS['TL_LANG']['tl_module']['klarna_color_header'],
+    'exclude'   => true,
+    'inputType' => 'text',
+    'eval'      => [
+        'minlength'      => 6,
+        'maxlength'      => 6,
+        'colorpicker'    => true,
+        'isHexColor'     => true,
+        'decodeEntities' => true,
+        'tl_class'       => 'w50 wizard',
+    ],
+    'sql'       => "varchar(6) NOT NULL default ''",
+];
+
+$GLOBALS['TL_DCA']['tl_module']['fields']['klarna_color_link'] = [
+    'label'     => &$GLOBALS['TL_LANG']['tl_module']['klarna_color_link'],
+    'exclude'   => true,
+    'inputType' => 'text',
+    'eval'      => [
+        'minlength'      => 6,
+        'maxlength'      => 6,
+        'colorpicker'    => true,
+        'isHexColor'     => true,
+        'decodeEntities' => true,
+        'tl_class'       => 'w50 wizard',
+    ],
+    'sql'       => "varchar(6) NOT NULL default ''",
 ];
