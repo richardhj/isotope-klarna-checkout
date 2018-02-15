@@ -20,6 +20,7 @@ use Contao\CoreBundle\Exception\NoRootPageFoundException;
 use Contao\Environment;
 use Contao\Model;
 use Contao\Module;
+use Contao\ModuleModel;
 use Contao\PageModel;
 use Contao\System;
 use GuzzleHttp\Exception\RequestException;
@@ -50,6 +51,25 @@ class KlarnaCheckout extends Module
      * @var string
      */
     protected $strTemplate = 'mod_klarna_checkout';
+
+    /**
+     * @var Config|Model
+     */
+    private $config;
+
+    /**
+     * KlarnaCheckout constructor.
+     *
+     * @param ModuleModel $module
+     * @param string      $column
+     */
+    public function __construct($module, $column = 'main')
+    {
+        parent::__construct($module, $column);
+
+        $this->config = Isotope::getConfig();
+        $this->cart   = Isotope::getCart();
+    }
 
     /**
      * Parse the template
@@ -90,23 +110,20 @@ class KlarnaCheckout extends Module
      */
     protected function compile()
     {
-        /** @var Config|Model $config */
-        $config = Isotope::getConfig();
-        if (!$config->use_klarna) {
+        if (!$this->config->use_klarna) {
             $this->Template->gui = sprintf('Klarna not configured for "%s"', $config->name);
 
             return;
         }
 
-        $apiUsername = $config->klarna_api_username;
-        $apiPassword = $config->klarna_api_password;
+        $apiUsername = $this->config->klarna_api_username;
+        $apiPassword = $this->config->klarna_api_password;
         $connector   = KlarnaConnector::create(
             $apiUsername,
             $apiPassword,
-            $config->klarna_api_test ? ConnectorInterface::EU_TEST_BASE_URL : ConnectorInterface::EU_BASE_URL
+            $this->config->klarna_api_test ? ConnectorInterface::EU_TEST_BASE_URL : ConnectorInterface::EU_BASE_URL
         );
 
-        $this->cart     = Isotope::getCart();
         $klarnaOrderId  = $this->cart->klarna_order_id;
         $klarnaCheckout = null;
 
@@ -148,8 +165,8 @@ class KlarnaCheckout extends Module
                 $klarnaCheckout = new KlarnaOrder($connector);
                 $klarnaCheckout->create(
                     [
-                        'purchase_country'   => $config->country,
-                        'purchase_currency'  => $config->currency,
+                        'purchase_country'   => $this->config->country,
+                        'purchase_currency'  => $this->config->currency,
                         'locale'             => $request->getLocale(),
                         'order_amount'       => $this->cart->getTotal() * 100,
                         'order_tax_amount'   => ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
@@ -188,7 +205,7 @@ class KlarnaCheckout extends Module
                             ),
                         ],
                         'shipping_options'   => $this->shippingOptions(deserialize($this->iso_shipping_modules, true)),
-                        'shipping_countries' => $config->getShippingCountries(),
+                        'shipping_countries' => $this->config->getShippingCountries(),
                     ]
                 );
 

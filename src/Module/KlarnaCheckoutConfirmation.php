@@ -19,6 +19,7 @@ use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\CoreBundle\Exception\RedirectResponseException;
 use Contao\Model;
 use Contao\Module;
+use Contao\ModuleModel;
 use Contao\PageModel;
 use Contao\System;
 use GuzzleHttp\Exception\ClientException;
@@ -48,6 +49,24 @@ class KlarnaCheckoutConfirmation extends Module
      * @var string
      */
     protected $strTemplate = 'mod_klarna_checkout_confirmation';
+
+    /**
+     * @var Config|Model
+     */
+    private $config;
+
+    /**
+     * KlarnaCheckoutConfirmation constructor.
+     *
+     * @param ModuleModel $module
+     * @param string      $column
+     */
+    public function __construct($module, $column = 'main')
+    {
+        parent::__construct($module, $column);
+
+        $this->config = Isotope::getConfig();
+    }
 
     /**
      * Parse the template
@@ -92,9 +111,7 @@ class KlarnaCheckoutConfirmation extends Module
      */
     protected function compile()
     {
-        /** @var Config|Model $config */
-        $config = Isotope::getConfig();
-        if (!$config->use_klarna) {
+        if (!$this->config->use_klarna) {
             $this->Template->gui = sprintf('Klarna not configured for "%s"', $config->name);
 
             return;
@@ -103,12 +120,12 @@ class KlarnaCheckoutConfirmation extends Module
         /** @var Request $request */
         $request     = System::getContainer()->get('request_stack')->getCurrentRequest();
         $orderId     = $request->query->get('klarna_order_id');
-        $apiUsername = $config->klarna_api_username;
-        $apiPassword = $config->klarna_api_password;
+        $apiUsername = $this->config->klarna_api_username;
+        $apiPassword = $this->config->klarna_api_password;
         $connector   = KlarnaConnector::create(
             $apiUsername,
             $apiPassword,
-            $config->klarna_api_test ? ConnectorInterface::EU_TEST_BASE_URL : ConnectorInterface::EU_BASE_URL
+            $this->config->klarna_api_test ? ConnectorInterface::EU_TEST_BASE_URL : ConnectorInterface::EU_BASE_URL
         );
 
         $klarnaCheckout = new KlarnaOrder($connector, $orderId);
