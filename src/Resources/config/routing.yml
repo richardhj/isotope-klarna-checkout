@@ -13,7 +13,7 @@ richardhj.klarna_checkout.callback.address_update:
         _controller: richardhj.klarna_checkout.controller.callback.address_update
 
 richardhj.klarna_checkout.callback.country_change:
-    path: /kco/callback/address_update
+    path: /kco/callback/country_change
     defaults:
         _scope: frontend
         _token_check: false

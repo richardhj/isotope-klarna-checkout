@@ -174,14 +174,14 @@ class KlarnaCheckout extends Module
                         'merchant_urls'      => [
                             'terms'                  => $this->uri($this->klarna_terms_page),
                             'checkout'               => $this->uri($this->klarna_checkout_page),
-                            'confirmation'           => $this->uri(
-                                $this->klarna_confirmation_page,
-                                ['klarna_order_id' => '{checkout.order.id}']
-                            ),
-                            'push'                   => System::getContainer()->get('router')->generate(
-                                'richardhj.klarna_checkout.push',
-                                ['order_id' => '{checkout.order.id}'],
-                                UrlGeneratorInterface::ABSOLUTE_URL
+                            'confirmation'           => $this->uri($this->klarna_confirmation_page)
+                                                        .'?klarna_order_id={checkout.order.id}',
+                            'push'                   => urldecode(
+                                System::getContainer()->get('router')->generate(
+                                    'richardhj.klarna_checkout.push',
+                                    ['order_id' => '{checkout.order.id}'],
+                                    UrlGeneratorInterface::ABSOLUTE_URL
+                                )
                             ),
                             'shipping_option_update' => System::getContainer()->get('router')->generate(
                                 'richardhj.klarna_checkout.callback.shipping_option_update',
@@ -230,22 +230,17 @@ class KlarnaCheckout extends Module
     /**
      * Absolute uri of given page id.
      *
-     * @param int        $pageId
-     * @param array|null $params
+     * @param int $pageId
      *
      * @return string
      */
-    private function uri(int $pageId, array $params = null): string
+    private function uri(int $pageId): string
     {
         $page = PageModel::findById($pageId);
         if (null === $page) {
             return null;
         }
 
-        if (null !== $params) {
-            $params = '?'.http_build_query($params);
-        }
-
-        return Environment::get('url').'/'.$page->getFrontendUrl($params);
+        return Environment::get('url').'/'.$page->getFrontendUrl();
     }
 }
