@@ -25,7 +25,8 @@ class CountryChange
 {
 
     /**
-     * Will be called whenever the consumer changes billing address country.
+     * Will be called whenever the consumer changes billing address country. Time to update shipping, tax and purchase
+     * currency.
      * The response will contain an error if the billing country is not supported as per shop config.
      *
      * @param Request $request The request.
@@ -50,8 +51,8 @@ class CountryChange
         // FIXME this is ambigue as Klarna does not submit the order_id
         /** @var Cart|Model $cart */
         $cart = Cart::findOneBy(
-            ['type=?', 'total=?', 'currency=?'],
-            ['cart', $data->order_amount / 100, $data->purchase_currency],
+            ['type=?', 'currency=?'],
+            ['cart', $data->purchase_currency],
             ['order' => 'tstamp DESC']
         );
 
@@ -65,7 +66,7 @@ class CountryChange
             exit;
         }
 
-        $response = new JsonResponse([]);
+        $response = new JsonResponse($data);
         $response->send();
     }
 }

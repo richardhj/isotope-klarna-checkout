@@ -70,7 +70,7 @@ class OrderValidation
 
         $isotopeOrder->lock();
 
-        $response = new JsonResponse([]);
+        $response = new Response();
         $response->send();
     }
 

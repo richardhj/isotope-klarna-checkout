@@ -58,8 +58,8 @@ class AddressUpdate
         // FIXME this is ambigue as Klarna does not submit the order_id
         /** @var Cart|Model $cart */
         $this->cart = Cart::findOneBy(
-            ['type=?', 'total=?', 'currency=?'],
-            ['cart', $data->order_amount / 100, $data->purchase_currency],
+            ['type=?', 'currency=?'],
+            ['cart', $data->purchase_currency],
             ['order' => 'tstamp DESC']
         );
 

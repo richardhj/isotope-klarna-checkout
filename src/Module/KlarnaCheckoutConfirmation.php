@@ -112,7 +112,7 @@ class KlarnaCheckoutConfirmation extends Module
     protected function compile()
     {
         if (!$this->config->use_klarna) {
-            $this->Template->gui = sprintf('Klarna not configured for "%s"', $config->name);
+            $this->Template->gui = sprintf('Klarna not configured for "%s"', $this->config->name);
 
             return;
         }
