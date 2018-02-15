@@ -31,4 +31,4 @@ richardhj.klarna_checkout.callback.order_validation:
     defaults:
         _scope: frontend
         _token_check: false
-        _controller: richardhj.klarna_checkout.controller.callback.validation
+        _controller: richardhj.klarna_checkout.controller.callback.order_validation
