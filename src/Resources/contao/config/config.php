@@ -17,3 +17,7 @@ use Richardhj\IsotopeKlarnaCheckoutBundle\Module\KlarnaCheckoutConfirmation;
 
 $GLOBALS['FE_MOD']['isotope']['iso_klarna_checkout']              = KlarnaCheckout::class;
 $GLOBALS['FE_MOD']['isotope']['iso_klarna_checkout_confirmation'] = KlarnaCheckoutConfirmation::class;
+
+
+$GLOBALS['ISO_HOOKS']['findSurchargesForCollection'][] =
+    ['richardhj.klarna_checkout.hook_listener.find_surcharges_for_collection', 'findShippingAndPaymentSurcharges'];

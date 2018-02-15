@@ -15,6 +15,7 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
 
 
 use Contao\BackendTemplate;
+use Contao\Controller;
 use Contao\Environment;
 use Contao\Model;
 use Contao\Module;
@@ -27,6 +28,7 @@ use Klarna\Rest\Checkout\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
 use Klarna\Rest\Transport\Exception\ConnectorException;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\CanCheckoutTrait;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetShippingOptionsTrait;
 use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException;
@@ -39,6 +41,7 @@ class KlarnaCheckout extends Module
 
     use GetOrderLinesTrait;
     use GetShippingOptionsTrait;
+    use CanCheckoutTrait;
 
     /**
      * Template
@@ -75,7 +78,7 @@ class KlarnaCheckout extends Module
     /**
      * Compile the current element
      *
-     * @throws RequestException
+     * @throws \Contao\CoreBundle\Exception\NoRootPageFoundException
      * @throws ConnectorException
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
@@ -103,8 +106,20 @@ class KlarnaCheckout extends Module
         $klarnaOrderId  = $this->cart->klarna_order_id;
         $klarnaCheckout = null;
 
+        if (false === $this->canCheckout()) {
+            if ($this->iso_cart_jumpTo > 0) {
+                $jumpToCart = PageModel::findPublishedById($this->iso_cart_jumpTo);
+                if (null !== $jumpToCart) {
+                    $jumpToCart->loadDetails();
+                    Controller::redirect($jumpToCart->getFrontendUrl(null, $jumpToCart->language));
+                }
+            }
+
+            return;
+        }
+
         if ($klarnaOrderId) {
-            // Resume, just make the sure the cart is up to date
+            // Resume, just make sure the cart is up to date
             $klarnaCheckout = new KlarnaOrder($connector, $klarnaOrderId);
             try {
                 $klarnaCheckout->update(
@@ -119,61 +134,70 @@ class KlarnaCheckout extends Module
             }
         }
 
-        if (null === $klarnaCheckout) {
-            /** @var Request $request */
-            $request = System::getContainer()->get('request_stack')->getCurrentRequest();
+        try {
+            if (null === $klarnaCheckout) {
+                /** @var Request $request */
+                $request = System::getContainer()->get('request_stack')->getCurrentRequest();
 
-            $klarnaCheckout = new KlarnaOrder($connector);
-            $klarnaCheckout->create(
-                [
-                    'purchase_country'   => $config->country,
-                    'purchase_currency'  => $config->currency,
-                    'locale'             => $request->getLocale(),
-                    'order_amount'       => $this->cart->getTotal() * 100,
-                    'order_tax_amount'   => ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
-                    'order_lines'        => $this->orderLines(),
-                    'merchant_urls'      => [
-                        'terms'                  => $this->uri($this->klarna_terms_page),
-                        'checkout'               => $this->uri($this->klarna_checkout_page),
-                        'confirmation'           => $this->uri(
-                            $this->klarna_confirmation_page,
-                            ['klarna_order_id' => '{checkout.order.id}']
-                        ),
-                        'push'                   => System::getContainer()->get('router')->generate(
-                            'richardhj.klarna_checkout.push',
-                            ['order_id' => '{checkout.order.id}'],
-                            UrlGeneratorInterface::ABSOLUTE_URL
-                        ),
-                        'shipping_option_update' => System::getContainer()->get('router')->generate(
-                            'richardhj.klarna_checkout.callback.shipping_option_update',
-                            [],
-                            UrlGeneratorInterface::ABSOLUTE_URL
-                        ),
-                        'address_update'         => System::getContainer()->get('router')->generate(
-                            'richardhj.klarna_checkout.callback.address_update',
-                            [],
-                            UrlGeneratorInterface::ABSOLUTE_URL
-                        ),
-                        'country_change'         => System::getContainer()->get('router')->generate(
-                            'richardhj.klarna_checkout.callback.country_change',
-                            [],
-                            UrlGeneratorInterface::ABSOLUTE_URL
-                        ),
-                        'order_validation'       => System::getContainer()->get('router')->generate(
-                            'richardhj.klarna_checkout.callback.order_validation',
-                            [],
-                            UrlGeneratorInterface::ABSOLUTE_URL
-                        ),
-                    ],
-                    'shipping_options'   => $this->shippingOptions(deserialize($this->iso_shipping_modules, true)),
-                    'shipping_countries' => $config->getShippingCountries(),
-                ]
-            );
+                $klarnaCheckout = new KlarnaOrder($connector);
+                $klarnaCheckout->create(
+                    [
+                        'purchase_country'   => $config->country,
+                        'purchase_currency'  => $config->currency,
+                        'locale'             => $request->getLocale(),
+                        'order_amount'       => $this->cart->getTotal() * 100,
+                        'order_tax_amount'   => ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
+                        'order_lines'        => $this->orderLines(),
+                        'merchant_urls'      => [
+                            'terms'                  => $this->uri($this->klarna_terms_page),
+                            'checkout'               => $this->uri($this->klarna_checkout_page),
+                            'confirmation'           => $this->uri(
+                                $this->klarna_confirmation_page,
+                                ['klarna_order_id' => '{checkout.order.id}']
+                            ),
+                            'push'                   => System::getContainer()->get('router')->generate(
+                                'richardhj.klarna_checkout.push',
+                                ['order_id' => '{checkout.order.id}'],
+                                UrlGeneratorInterface::ABSOLUTE_URL
+                            ),
+                            'shipping_option_update' => System::getContainer()->get('router')->generate(
+                                'richardhj.klarna_checkout.callback.shipping_option_update',
+                                [],
+                                UrlGeneratorInterface::ABSOLUTE_URL
+                            ),
+                            'address_update'         => System::getContainer()->get('router')->generate(
+                                'richardhj.klarna_checkout.callback.address_update',
+                                [],
+                                UrlGeneratorInterface::ABSOLUTE_URL
+                            ),
+                            'country_change'         => System::getContainer()->get('router')->generate(
+                                'richardhj.klarna_checkout.callback.country_change',
+                                [],
+                                UrlGeneratorInterface::ABSOLUTE_URL
+                            ),
+                            'order_validation'       => System::getContainer()->get('router')->generate(
+                                'richardhj.klarna_checkout.callback.order_validation',
+                                [],
+                                UrlGeneratorInterface::ABSOLUTE_URL
+                            ),
+                        ],
+                        'shipping_options'   => $this->shippingOptions(deserialize($this->iso_shipping_modules, true)),
+                        'shipping_countries' => $config->getShippingCountries(),
+                    ]
+                );
 
-            $this->cart->klarna_checkout_module = $this->id;
+                $this->cart->klarna_checkout_module = $this->id;
+            }
+
+            $klarnaCheckout->fetch();
+
+        } catch (RequestException $e) {
+            $this->Template->gui = $e->getResponse()->getReasonPhrase();
+            System::log('KCO error: '.strip_tags($e->getMessage()), __METHOD__, TL_ERROR);
+
+            return;
         }
 
-        $klarnaCheckout->fetch();
         $this->cart->klarna_order_id = $klarnaCheckout->getId();
         $this->cart->save();
 

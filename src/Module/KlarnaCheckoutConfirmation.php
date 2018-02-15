@@ -26,6 +26,7 @@ use GuzzleHttp\Exception\RequestException;
 use Isotope\Isotope;
 use Isotope\Model\Address;
 use Isotope\Model\Config;
+use Isotope\Model\ProductCollection\Order as IsotopeOrder;
 use Isotope\Model\Shipping;
 use Klarna\Rest\Checkout\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
@@ -125,10 +126,8 @@ class KlarnaCheckoutConfirmation extends Module
             throw new RedirectResponseException($uri);
         }
 
-        // Create order
-        $isotopeOrder = Isotope::getCart()->getDraftOrder();
+        $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $klarnaCheckout->getId());
 
-        $isotopeOrder->klarna_order_id      = $orderId;
         $isotopeOrder->nc_notification      = $this->nc_notification;
         $isotopeOrder->iso_addToAddressbook = $this->iso_addToAddressbook;
 
@@ -156,7 +155,6 @@ class KlarnaCheckoutConfirmation extends Module
 
         // Save and complete order
         $isotopeOrder->save();
-        $isotopeOrder->lock();
         $isotopeOrder->checkout();
         $isotopeOrder->complete();
 

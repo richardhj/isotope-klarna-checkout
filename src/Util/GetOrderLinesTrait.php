@@ -42,15 +42,7 @@ trait GetOrderLinesTrait
             $return[] = get_object_vars(OrderLine::createFromItem($item));
         }
 
-        $surcharges = $this->cart->getSurcharges();
-        if (null !== ($paymentSurcharge = $this->cart->getShippingSurcharge())) {
-            $surcharges[] = $paymentSurcharge;
-        }
-        if (null !== ($paymentSurcharge = $this->cart->getPaymentSurcharge())) {
-            $surcharges[] = $paymentSurcharge;
-        }
-
-        foreach ($surcharges as $surcharge) {
+        foreach ($this->cart->getSurcharges() as $surcharge) {
             if ($surcharge->addToTotal) {
                 $return[] = get_object_vars(OrderLine::createForSurcharge($surcharge));
             }

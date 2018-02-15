@@ -13,10 +13,16 @@
 
 $GLOBALS['TL_DCA']['tl_module']['palettes']['iso_klarna_checkout'] = '{title_legend},name,headline,type;'
                                                                      .'{config_legend},iso_shipping_modules,nc_notification;'
-                                                                     .'{redirect_legend},klarna_terms_page,klarna_checkout_page,klarna_confirmation_page,klarna_cancellation_page;'
+                                                                     .'{redirect_legend},iso_cart_jumpTo,klarna_terms_page,klarna_checkout_page,klarna_confirmation_page,klarna_cancellation_page;'
                                                                      .'{template_legend},customTpl;'
                                                                      .'{protected_legend:hide},protected;'
                                                                      .'{expert_legend:hide},guests,cssID';
+
+$GLOBALS['TL_DCA']['tl_module']['palettes']['iso_klarna_checkout_confirmation'] = '{title_legend},name,headline,type;'
+                                                                                  .'{config_legend},nc_notification,iso_addToAddressbook;'
+                                                                                  .'{template_legend},customTpl;'
+                                                                                  .'{protected_legend:hide},protected;'
+                                                                                  .'{expert_legend:hide},guests,cssID';
 
 $GLOBALS['TL_DCA']['tl_module']['fields']['klarna_terms_page'] = [
     'label'      => &$GLOBALS['TL_LANG']['tl_module']['klarna_terms_page'],

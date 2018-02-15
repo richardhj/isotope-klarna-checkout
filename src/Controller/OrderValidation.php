@@ -16,13 +16,17 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\System;
+use Isotope\Model\ProductCollection\Cart as IsotopeCart;
 use Isotope\Model\ProductCollection\Order as IsotopeOrder;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\CanCheckoutTrait;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class OrderValidation
 {
+
+    use CanCheckoutTrait;
 
     /**
      * Will be called before completing the purchase to validate the information provided by the consumer in Klarna's
@@ -45,20 +49,28 @@ class OrderValidation
             throw new PageNotFoundException('Page call not valid.');
         }
 
-        $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $data->order_id);
+        // Create order
+        $this->cart   = IsotopeCart::findOneBy('klarna_order_id', $data->order_id);
+        $isotopeOrder = $this->cart->getDraftOrder();
 
-        $response = new JsonResponse([]);
-        if (false === $this->checkPreCheckoutHook($isotopeOrder)) {
+        $isotopeOrder->klarna_order_id = $data->order_id;
+
+        if (false === $this->checkPreCheckoutHook($isotopeOrder) || false === $this->canCheckout()) {
             $response = new JsonResponse(
                 [
                     'error_type' => 'address_error',
-//                    'error_text' => $this->translator->trans('ERR.orderFailed', null, $data->locale),
+                    //'error_text' => $this->translator->trans('ERR.orderFailed', null, $data->locale),
                     'error_text' => $GLOBALS['TL_LANG']['ERR']['orderFailed'],
                 ]
             );
             $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+            $response->send();
+            exit;
         }
 
+        $isotopeOrder->lock();
+
+        $response = new JsonResponse([]);
         $response->send();
     }
 

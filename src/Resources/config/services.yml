@@ -13,3 +13,6 @@ services:
 
     richardhj.klarna_checkout.controller.callback.order_validation:
         class: Richardhj\IsotopeKlarnaCheckoutBundle\Controller\OrderValidation
+
+    richardhj.klarna_checkout.hook_listener.find_surcharges_for_collection:
+        class: Richardhj\IsotopeKlarnaCheckoutBundle\HookListener\FindSurchargesForCollectionListener
