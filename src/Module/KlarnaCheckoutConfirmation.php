@@ -99,7 +99,7 @@ class KlarnaCheckoutConfirmation extends Module
      * @return void
      *
      * @throws RequestException          When an error is encountered
-     * @throws PageNotFoundException     If order is not found in Klarna system.
+     * @throws PageNotFoundException     If order is not found
      * @throws RedirectResponseException If the checkout is not completed yet.
      * @throws \RuntimeException         On an unexpected API response
      * @throws \RuntimeException         If the response content type is not JSON
@@ -133,7 +133,7 @@ class KlarnaCheckoutConfirmation extends Module
             $klarnaCheckout->fetch();
         } catch (ClientException $e) {
             if (404 === $e->getResponse()->getStatusCode()) {
-                throw new PageNotFoundException('Order not found: ID '.$orderId);
+                throw new PageNotFoundException('Klarna order not found: ID '.$orderId);
             }
 
             $this->Template->gui = $e->getResponse()->getReasonPhrase();
@@ -150,6 +150,9 @@ class KlarnaCheckoutConfirmation extends Module
         }
 
         $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $klarnaCheckout->getId());
+        if (null === $isotopeOrder) {
+            throw new PageNotFoundException('Isotope order not found: Klarna ID'.$klarnaCheckout->getId());
+        }
 
         $isotopeOrder->nc_notification      = $this->nc_notification;
         $isotopeOrder->iso_addToAddressbook = $this->iso_addToAddressbook;
