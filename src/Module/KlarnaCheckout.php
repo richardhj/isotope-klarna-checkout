@@ -25,6 +25,7 @@ use Contao\PageModel;
 use Contao\System;
 use GuzzleHttp\Exception\RequestException;
 use Isotope\Isotope;
+use Isotope\Model\Address;
 use Isotope\Model\Config;
 use Klarna\Rest\Checkout\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
@@ -33,13 +34,15 @@ use Klarna\Rest\Transport\Exception\ConnectorException;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\CanCheckoutTrait;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetShippingOptionsTrait;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\UpdateAddressTrait;
 
 class KlarnaCheckout extends Module
 {
 
+    use CanCheckoutTrait;
     use GetOrderLinesTrait;
     use GetShippingOptionsTrait;
-    use CanCheckoutTrait;
+    use UpdateAddressTrait;
 
     /**
      * Template
@@ -163,6 +166,17 @@ class KlarnaCheckout extends Module
                 /** @var PageModel $objPage */
                 global $objPage;
 
+                // Load addresses from address book for logged in members
+                $shippingAddress = null;
+                $billingAddress  = null;
+                if (FE_USER_LOGGED_IN) {
+                    $address         = Address::findDefaultBillingForMember($this->user->id);
+                    $shippingAddress = $this->getApiDataFromAddress($address);
+
+                    $address        = Address::findDefaultShippingForMember($this->user->id);
+                    $billingAddress = $this->getApiDataFromAddress($address);
+                }
+
                 $klarnaCheckout = new KlarnaOrder($connector);
                 $klarnaCheckout->create(
                     [
@@ -192,6 +206,8 @@ class KlarnaCheckout extends Module
                             'validation'             => Environment::get('url')
                                                         .'/system/modules/isotope-klarna-checkout/public/validation.php',
                         ],
+                        'billing_address'    => $billingAddress,
+                        'shipping_address'   => $shippingAddress,
                         'shipping_options'   => $this->shippingOptions(deserialize($this->iso_shipping_modules, true)),
                         'shipping_countries' => $this->config->getShippingCountries(),
                         'options'            => [
