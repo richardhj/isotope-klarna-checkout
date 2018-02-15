@@ -161,6 +161,8 @@ class KlarnaCheckout extends Module
                 );
             } catch (RequestException $e) {
                 $klarnaCheckout = null;
+            } catch (ConnectorException $e) {
+                $klarnaCheckout = null;
             }
         }
 

@@ -50,6 +50,17 @@ class OrderValidation
             throw new PageNotFoundException('Page call not valid.');
         }
 
+        $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $data->order_id);
+        if (null !== $isotopeOrder) {
+            if (!$isotopeOrder->isLocked()) {
+                $isotopeOrder->lock();
+            }
+
+            $response = new JsonResponse($data);
+            $response->send();
+            exit;
+        }
+
         $this->cart = IsotopeCart::findOneBy('klarna_order_id', $data->order_id);
         Isotope::setCart($this->cart);
 
@@ -72,7 +83,7 @@ class OrderValidation
 
         $isotopeOrder->lock();
 
-        $response = new Response();
+        $response = new JsonResponse($data);
         $response->send();
     }
 

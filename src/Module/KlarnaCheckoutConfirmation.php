@@ -154,6 +154,11 @@ class KlarnaCheckoutConfirmation extends Module
             throw new PageNotFoundException('Isotope order not found: Klarna ID'.$klarnaCheckout->getId());
         }
 
+        $this->Template->gui = $klarnaCheckout['html_snippet'];
+        if ($isotopeOrder->isCheckoutComplete()) {
+            return;
+        }
+
         $isotopeOrder->nc_notification      = $this->nc_notification;
         $isotopeOrder->iso_addToAddressbook = $this->iso_addToAddressbook;
 
@@ -183,7 +188,5 @@ class KlarnaCheckoutConfirmation extends Module
         $isotopeOrder->save();
         $isotopeOrder->checkout();
         $isotopeOrder->complete();
-
-        $this->Template->gui = $klarnaCheckout['html_snippet'];
     }
 }
