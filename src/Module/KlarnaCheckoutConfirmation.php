@@ -31,6 +31,7 @@ use Isotope\Model\Shipping;
 use Klarna\Rest\Checkout\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
+use Klarna\Rest\Transport\Exception\ConnectorException;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\UpdateAddressTrait;
 use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
@@ -78,14 +79,14 @@ class KlarnaCheckoutConfirmation extends Module
      *
      * @return void
      *
-     * @throws ClientException
-     * @throws RequestException
-     * @throws PageNotFoundException If order is not found in Klarna system.
+     * @throws RequestException          When an error is encountered
+     * @throws PageNotFoundException     If order is not found in Klarna system.
      * @throws RedirectResponseException If the checkout is not completed yet.
-     * @throws \RuntimeException
-     * @throws \Klarna\Rest\Transport\Exception\ConnectorException
-     * @throws \InvalidArgumentException
-     * @throws \LogicException If Klarna not configured in Isotope config.
+     * @throws \RuntimeException         On an unexpected API response
+     * @throws \RuntimeException         If the response content type is not JSON
+     * @throws ConnectorException        When the API replies with an error response
+     * @throws \InvalidArgumentException If the JSON cannot be parsed
+     * @throws \LogicException           If Klarna not configured in Isotope config.
      * @throws ServiceNotFoundException
      * @throws ServiceCircularReferenceException
      */
@@ -94,7 +95,9 @@ class KlarnaCheckoutConfirmation extends Module
         /** @var Config|Model $config */
         $config = Isotope::getConfig();
         if (!$config->use_klarna) {
-            throw new \LogicException('Klarna is not configured in the Isotope config.');
+            $this->Template->gui = sprintf('Klarna not configured for "%s"', $config->name);
+
+            return;
         }
 
         /** @var Request $request */
@@ -115,7 +118,10 @@ class KlarnaCheckoutConfirmation extends Module
             if (404 === $e->getResponse()->getStatusCode()) {
                 throw new PageNotFoundException('Order not found: ID '.$orderId);
             }
-            throw $e;
+
+            $this->Template->gui = $e->getResponse()->getReasonPhrase();
+
+            return;
         }
 
         if ('checkout_incomplete' === $klarnaCheckout['status']) {

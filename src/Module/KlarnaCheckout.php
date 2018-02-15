@@ -16,6 +16,7 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
 
 use Contao\BackendTemplate;
 use Contao\Controller;
+use Contao\CoreBundle\Exception\NoRootPageFoundException;
 use Contao\Environment;
 use Contao\Model;
 use Contao\Module;
@@ -78,11 +79,12 @@ class KlarnaCheckout extends Module
     /**
      * Compile the current element
      *
-     * @throws \Contao\CoreBundle\Exception\NoRootPageFoundException
-     * @throws ConnectorException
-     * @throws \InvalidArgumentException
-     * @throws \RuntimeException
-     * @throws \LogicException
+     * @throws NoRootPageFoundException
+     * @throws ConnectorException        When the API replies with an error response
+     * @throws \InvalidArgumentException If the JSON cannot be parsed
+     * @throws \RuntimeException         On an unexpected API response
+     * @throws \RuntimeException         If the response content type is not JSON
+     * @throws \LogicException           When Guzzle cannot populate the response
      * @throws ServiceNotFoundException
      * @throws ServiceCircularReferenceException
      */
@@ -91,7 +93,9 @@ class KlarnaCheckout extends Module
         /** @var Config|Model $config */
         $config = Isotope::getConfig();
         if (!$config->use_klarna) {
-            throw new \LogicException('Klarna is not configured in the Isotope config.');
+            $this->Template->gui = sprintf('Klarna not configured for "%s"', $config->name);
+
+            return;
         }
 
         $apiUsername = $config->klarna_api_username;
@@ -114,6 +118,8 @@ class KlarnaCheckout extends Module
                     Controller::redirect($jumpToCart->getFrontendUrl(null, $jumpToCart->language));
                 }
             }
+
+            $this->Template->gui = $GLOBALS['TL_LANG']['ERR']['cartErrorInItems'];
 
             return;
         }
