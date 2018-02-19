@@ -20,7 +20,6 @@ use Klarna\Rest\OrderManagement\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
 use Klarna\Rest\Transport\Exception\ConnectorException;
-use Symfony\Component\HttpFoundation\Request;
 
 class Push
 {
@@ -30,7 +29,6 @@ class Push
      * confirmation. This controller will i.a. complete the order and trigger the notifications.
      *
      * @param integer $orderId The checkout order id.
-     * @param Request $request The request.
      *
      * @return void
      *
@@ -39,7 +37,7 @@ class Push
      * @throws RequestException
      * @throws \LogicException If Klarna is not configured in the Isotope config.
      */
-    public function __invoke($orderId, Request $request)
+    public function __invoke($orderId)
     {
         $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $orderId);
 

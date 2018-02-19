@@ -16,7 +16,6 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
 
 use Contao\BackendTemplate;
 use Contao\Controller;
-use Contao\CoreBundle\Exception\NoRootPageFoundException;
 use Contao\Environment;
 use Contao\FrontendUser;
 use Contao\Model;
@@ -34,10 +33,6 @@ use Klarna\Rest\Transport\Exception\ConnectorException;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\CanCheckoutTrait;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetShippingOptionsTrait;
-use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException;
-use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class KlarnaCheckout extends Module
 {
@@ -106,14 +101,11 @@ class KlarnaCheckout extends Module
     /**
      * Compile the current element
      *
-     * @throws NoRootPageFoundException
      * @throws ConnectorException        When the API replies with an error response
      * @throws \InvalidArgumentException If the JSON cannot be parsed
      * @throws \RuntimeException         On an unexpected API response
      * @throws \RuntimeException         If the response content type is not JSON
      * @throws \LogicException           When Guzzle cannot populate the response
-     * @throws ServiceNotFoundException
-     * @throws ServiceCircularReferenceException
      */
     protected function compile()
     {
@@ -168,15 +160,15 @@ class KlarnaCheckout extends Module
 
         try {
             if (null === $klarnaCheckout) {
-                /** @var Request $request */
-                $request = System::getContainer()->get('request_stack')->getCurrentRequest();
+                /** @var PageModel $objPage */
+                global $objPage;
 
                 $klarnaCheckout = new KlarnaOrder($connector);
                 $klarnaCheckout->create(
                     [
                         'purchase_country'   => $this->config->country,
                         'purchase_currency'  => $this->config->currency,
-                        'locale'             => $request->getLocale(),
+                        'locale'             => $objPage->language,
                         'order_amount'       => $this->cart->getTotal() * 100,
                         'order_tax_amount'   => ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
                         'order_lines'        => $this->orderLines(),
@@ -185,33 +177,17 @@ class KlarnaCheckout extends Module
                             'checkout'               => $this->uri($this->klarna_checkout_page),
                             'confirmation'           => $this->uri($this->klarna_confirmation_page)
                                                         .'?klarna_order_id={checkout.order.id}',
-                            'push'                   => urldecode(
-                                System::getContainer()->get('router')->generate(
-                                    'richardhj.klarna_checkout.push',
-                                    ['order_id' => '{checkout.order.id}'],
-                                    UrlGeneratorInterface::ABSOLUTE_URL
-                                )
-                            ),
-                            'shipping_option_update' => System::getContainer()->get('router')->generate(
-                                'richardhj.klarna_checkout.callback.shipping_option_update',
-                                [],
-                                UrlGeneratorInterface::ABSOLUTE_URL
-                            ),
-                            'address_update'         => System::getContainer()->get('router')->generate(
-                                'richardhj.klarna_checkout.callback.address_update',
-                                [],
-                                UrlGeneratorInterface::ABSOLUTE_URL
-                            ),
-                            'country_change'         => System::getContainer()->get('router')->generate(
-                                'richardhj.klarna_checkout.callback.country_change',
-                                [],
-                                UrlGeneratorInterface::ABSOLUTE_URL
-                            ),
-                            'validation'             => System::getContainer()->get('router')->generate(
-                                'richardhj.klarna_checkout.callback.order_validation',
-                                [],
-                                UrlGeneratorInterface::ABSOLUTE_URL
-                            ),
+                            'push'                   => Environment::get('url')
+                                                        .'/system/modules/isotope-klarna-checkout/push.php'
+                                                        .'?klarna_order_id={checkout.order.id}',
+                            'shipping_option_update' => Environment::get('url')
+                                                        .'/system/modules/isotope-klarna-checkout/shipping_option_update.php',
+                            'address_update'         => Environment::get('url')
+                                                        .'/system/modules/isotope-klarna-checkout/address_update.php',
+                            'country_change'         => Environment::get('url')
+                                                        .'/system/modules/isotope-klarna-checkout/country_change.php',
+                            'validation'             => Environment::get('url')
+                                                        .'/system/modules/isotope-klarna-checkout/validation.php',
                         ],
                         'shipping_options'   => $this->shippingOptions(deserialize($this->iso_shipping_modules, true)),
                         'shipping_countries' => $this->config->getShippingCountries(),

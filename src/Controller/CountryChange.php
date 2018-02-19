@@ -14,11 +14,10 @@
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 
-use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\Model;
+use Contao\PageError404;
 use Isotope\Model\ProductCollection\Cart;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class CountryChange
@@ -29,20 +28,21 @@ class CountryChange
      * currency.
      * The response will contain an error if the billing country is not supported as per shop config.
      *
-     * @param Request $request The request.
-     *
      * @return void
      *
-     * @throws PageNotFoundException If page is requested without data.
      * @throws \LogicException
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
      */
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        $data = json_decode($request->getContent());
+        $data = json_decode(file_get_contents('php://input'));
         if (null === $data) {
-            throw new PageNotFoundException('Page call not valid.');
+            $objHandler = new $GLOBALS['TL_PTY']['error_404']();
+            /** @var PageError404 $objHandler */
+            $response = $objHandler->getResponse();
+            $response->send();
+            exit;
         }
 
         $billingAddress = $data->billing_address;

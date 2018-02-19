@@ -15,13 +15,13 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
 
 
 use Contao\BackendTemplate;
-use Contao\CoreBundle\Exception\PageNotFoundException;
-use Contao\CoreBundle\Exception\RedirectResponseException;
+use Contao\Controller;
+use Contao\Input;
 use Contao\Model;
 use Contao\Module;
 use Contao\ModuleModel;
+use Contao\PageError404;
 use Contao\PageModel;
-use Contao\System;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use Isotope\Isotope;
@@ -34,9 +34,6 @@ use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
 use Klarna\Rest\Transport\Exception\ConnectorException;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\UpdateAddressTrait;
-use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException;
-use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
-use Symfony\Component\HttpFoundation\Request;
 
 class KlarnaCheckoutConfirmation extends Module
 {
@@ -99,15 +96,11 @@ class KlarnaCheckoutConfirmation extends Module
      * @return void
      *
      * @throws RequestException          When an error is encountered
-     * @throws PageNotFoundException     If order is not found
-     * @throws RedirectResponseException If the checkout is not completed yet.
      * @throws \RuntimeException         On an unexpected API response
      * @throws \RuntimeException         If the response content type is not JSON
      * @throws ConnectorException        When the API replies with an error response
      * @throws \InvalidArgumentException If the JSON cannot be parsed
      * @throws \LogicException           If Klarna not configured in Isotope config.
-     * @throws ServiceNotFoundException
-     * @throws ServiceCircularReferenceException
      */
     protected function compile()
     {
@@ -117,9 +110,7 @@ class KlarnaCheckoutConfirmation extends Module
             return;
         }
 
-        /** @var Request $request */
-        $request     = System::getContainer()->get('request_stack')->getCurrentRequest();
-        $orderId     = $request->query->get('klarna_order_id');
+        $orderId     = Input::get('klarna_order_id');
         $apiUsername = $this->config->klarna_api_username;
         $apiPassword = $this->config->klarna_api_password;
         $connector   = KlarnaConnector::create(
@@ -133,7 +124,11 @@ class KlarnaCheckoutConfirmation extends Module
             $klarnaCheckout->fetch();
         } catch (ClientException $e) {
             if (404 === $e->getResponse()->getStatusCode()) {
-                throw new PageNotFoundException('Klarna order not found: ID '.$orderId);
+                $objHandler = new $GLOBALS['TL_PTY']['error_404']();
+                /** @var PageError404 $objHandler */
+                $response = $objHandler->getResponse();
+                $response->send();
+                exit;
             }
 
             $this->Template->gui = $e->getResponse()->getReasonPhrase();
@@ -146,12 +141,16 @@ class KlarnaCheckoutConfirmation extends Module
             $page = PageModel::findById($this->klarna_checkout_page);
             $uri  = (null !== $page) ? $page->getFrontendUrl() : '';
 
-            throw new RedirectResponseException($uri);
+            Controller::redirect($uri);
         }
 
         $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $klarnaCheckout->getId());
         if (null === $isotopeOrder) {
-            throw new PageNotFoundException('Isotope order not found: Klarna ID'.$klarnaCheckout->getId());
+            $objHandler = new $GLOBALS['TL_PTY']['error_404']();
+            /** @var PageError404 $objHandler */
+            $response = $objHandler->getResponse();
+            $response->send();
+            exit;
         }
 
         $this->Template->gui = $klarnaCheckout['html_snippet'];

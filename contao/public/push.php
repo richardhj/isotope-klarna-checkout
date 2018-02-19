@@ -11,12 +11,8 @@
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
-namespace Richardhj\IsotopeKlarnaCheckoutBundle;
+use Contao\Input;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Push;
 
-
-use Symfony\Component\HttpKernel\Bundle\Bundle;
-
-class RichardhjIsotopeKlarnaCheckoutBundle extends Bundle
-{
-
-}
+$push = new Push();
+$push(Input::get('klarna_order_id'));
