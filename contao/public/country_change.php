@@ -11,7 +11,8 @@
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
+use Contao\Input;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Controller\CountryChange;
 
 $countryChange = new CountryChange();
-$countryChange();
+$countryChange(Input::get('klarna_order_id'));

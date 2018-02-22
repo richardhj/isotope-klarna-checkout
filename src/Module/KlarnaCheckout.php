@@ -178,16 +178,19 @@ class KlarnaCheckout extends Module
                             'confirmation'           => $this->uri($this->klarna_confirmation_page)
                                                         .'?klarna_order_id={checkout.order.id}',
                             'push'                   => Environment::get('url')
-                                                        .'/system/modules/isotope-klarna-checkout/push.php'
+                                                        .'/system/modules/isotope-klarna-checkout/public/push.php'
                                                         .'?klarna_order_id={checkout.order.id}',
                             'shipping_option_update' => Environment::get('url')
-                                                        .'/system/modules/isotope-klarna-checkout/shipping_option_update.php',
+                                                        .'/system/modules/isotope-klarna-checkout/public/shipping_option_update.php'
+                                                        .'?klarna_order_id={checkout.order.id}',
                             'address_update'         => Environment::get('url')
-                                                        .'/system/modules/isotope-klarna-checkout/address_update.php',
+                                                        .'/system/modules/isotope-klarna-checkout/public/address_update.php'
+                                                        .'?klarna_order_id={checkout.order.id}',
                             'country_change'         => Environment::get('url')
-                                                        .'/system/modules/isotope-klarna-checkout/country_change.php',
+                                                        .'/system/modules/isotope-klarna-checkout/public/country_change.php'
+                                                        .'?klarna_order_id={checkout.order.id}',
                             'validation'             => Environment::get('url')
-                                                        .'/system/modules/isotope-klarna-checkout/validation.php',
+                                                        .'/system/modules/isotope-klarna-checkout/public/validation.php',
                         ],
                         'shipping_options'   => $this->shippingOptions(deserialize($this->iso_shipping_modules, true)),
                         'shipping_countries' => $this->config->getShippingCountries(),

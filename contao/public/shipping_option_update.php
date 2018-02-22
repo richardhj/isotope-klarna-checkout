@@ -11,7 +11,8 @@
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
+use Contao\Input;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Controller\ShippingOptionUpdate;
 
 $shippingOptionUpdate = new ShippingOptionUpdate();
-$shippingOptionUpdate();
+$shippingOptionUpdate(Input::get('klarna_order_id'));
