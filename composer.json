@@ -26,6 +26,10 @@
     }
   },
   "extra": {
-    "contao-manager-plugin": "Richardhj\\IsotopeKlarnaCheckoutBundle\\ContaoManager\\Plugin"
+    "contao-manager-plugin": "Richardhj\\IsotopeKlarnaCheckoutBundle\\ContaoManager\\Plugin",
+    "branch-alias": {
+      "dev-master": "1.0.x-dev",
+      "dev-contao3": "0.3.x-dev"
+    }
   }
 }
