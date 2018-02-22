@@ -192,20 +192,26 @@ class KlarnaCheckout extends Module
                                     UrlGeneratorInterface::ABSOLUTE_URL
                                 )
                             ),
-                            'shipping_option_update' => System::getContainer()->get('router')->generate(
-                                'richardhj.klarna_checkout.callback.shipping_option_update',
-                                [],
-                                UrlGeneratorInterface::ABSOLUTE_URL
+                            'shipping_option_update' => urldecode(
+                                System::getContainer()->get('router')->generate(
+                                    'richardhj.klarna_checkout.callback.shipping_option_update',
+                                    ['order_id' => '{checkout.order.id}'],
+                                    UrlGeneratorInterface::ABSOLUTE_URL
+                                )
                             ),
-                            'address_update'         => System::getContainer()->get('router')->generate(
-                                'richardhj.klarna_checkout.callback.address_update',
-                                [],
-                                UrlGeneratorInterface::ABSOLUTE_URL
+                            'address_update'         => urldecode(
+                                System::getContainer()->get('router')->generate(
+                                    'richardhj.klarna_checkout.callback.address_update',
+                                    ['order_id' => '{checkout.order.id}'],
+                                    UrlGeneratorInterface::ABSOLUTE_URL
+                                )
                             ),
-                            'country_change'         => System::getContainer()->get('router')->generate(
-                                'richardhj.klarna_checkout.callback.country_change',
-                                [],
-                                UrlGeneratorInterface::ABSOLUTE_URL
+                            'country_change'         => urldecode(
+                                System::getContainer()->get('router')->generate(
+                                    'richardhj.klarna_checkout.callback.country_change',
+                                    ['order_id' => '{checkout.order.id}'],
+                                    UrlGeneratorInterface::ABSOLUTE_URL
+                                )
                             ),
                             'validation'             => System::getContainer()->get('router')->generate(
                                 'richardhj.klarna_checkout.callback.order_validation',
