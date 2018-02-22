@@ -126,6 +126,15 @@ class KlarnaCheckout extends Module
             return;
         }
 
+        /** @var Request $request */
+        $request = System::getContainer()->get('request_stack')->getCurrentRequest();
+        if ($request->isSecure()) {
+            // HTTPS uris are required for the kco callbacks
+            $this->Template->gui = 'You are not accessing this page with HTTPS.';
+
+            return;
+        }
+
         $apiUsername = $this->config->klarna_api_username;
         $apiPassword = $this->config->klarna_api_password;
         $connector   = KlarnaConnector::create(
@@ -171,9 +180,6 @@ class KlarnaCheckout extends Module
 
         try {
             if (null === $klarnaCheckout) {
-                /** @var Request $request */
-                $request = System::getContainer()->get('request_stack')->getCurrentRequest();
-
                 // Load addresses from address book for logged in members
                 $shippingAddress = null;
                 $billingAddress  = null;
