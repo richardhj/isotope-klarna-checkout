@@ -29,6 +29,7 @@ class CountryChange
      * currency.
      * The response will contain an error if the billing country is not supported as per shop config.
      *
+     * @param integer $orderId The checkout order id.
      * @param Request $request The request.
      *
      * @return void
@@ -38,7 +39,7 @@ class CountryChange
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
      */
-    public function __invoke(Request $request)
+    public function __invoke($orderId, Request $request)
     {
         $data = json_decode($request->getContent());
         if (null === $data) {
@@ -48,14 +49,8 @@ class CountryChange
         $billingAddress = $data->billing_address;
         $billingCountry = $billingAddress->country;
 
-        // FIXME this is ambigue as Klarna does not submit the order_id
         /** @var Cart|Model $cart */
-        $cart = Cart::findOneBy(
-            ['type=?', 'currency=?'],
-            ['cart', $data->purchase_currency],
-            ['order' => 'tstamp DESC']
-        );
-
+        $cart   = Cart::findOneBy('klarna_order_id', $orderId);
         $config = $cart->getConfig();
 
         $allowedCountries = $config->getBillingCountries();

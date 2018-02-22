@@ -31,6 +31,7 @@ class ShippingOptionUpdate
      * Will be called whenever the consumer selects a shipping option.
      * The response will contain the updated order_lines due of added shipping_fee.
      *
+     * @param integer $orderId The checkout order id.
      * @param Request $request The request.
      *
      * @return void
@@ -40,20 +41,15 @@ class ShippingOptionUpdate
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
      */
-    public function __invoke(Request $request)
+    public function __invoke($orderId, Request $request)
     {
         $data = json_decode($request->getContent());
         if (null === $data) {
             throw new PageNotFoundException('Page call not valid.');
         }
 
-        // FIXME this is ambigue as Klarna does not submit the order_id
         /** @var Cart|Model $cart */
-        $this->cart = Cart::findOneBy(
-            ['type=?', 'currency=?'],
-            ['cart', $data->purchase_currency],
-            ['order' => 'tstamp DESC']
-        );
+        $this->cart = Cart::findOneBy('klarna_order_id', $orderId);
 
         $shippingMethod = Shipping::findByIdOrAlias($data->selected_shipping_option->id);
         $this->cart->setShippingMethod($shippingMethod);

@@ -37,6 +37,7 @@ class AddressUpdate
      * Will be called whenever the consumer changes billing or shipping address.
      * The response contains the updated shipping options.
      *
+     * @param integer $orderId The checkout order id.
      * @param Request $request The request.
      *
      * @return void
@@ -46,24 +47,18 @@ class AddressUpdate
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
      */
-    public function __invoke(Request $request)
+    public function __invoke($orderId, Request $request)
     {
         $data = json_decode($request->getContent());
         if (null === $data) {
             throw new PageNotFoundException('Page call not valid.');
         }
 
-        $shippingAddress = $data->shipping_address;
-
-        // FIXME this is ambigue as Klarna does not submit the order_id
         /** @var Cart|Model $cart */
-        $this->cart = Cart::findOneBy(
-            ['type=?', 'currency=?'],
-            ['cart', $data->purchase_currency],
-            ['order' => 'tstamp DESC']
-        );
+        $this->cart = Cart::findOneBy('klarna_order_id', $orderId);
 
-        $checkoutModule = ModuleModel::findById($this->cart->klarna_checkout_module);
+        $shippingAddress = $data->shipping_address;
+        $checkoutModule  = ModuleModel::findById($this->cart->klarna_checkout_module);
 
         $address = $this->cart->getShippingAddress();
         $address = $address ?? Address::createForProductCollection($this->cart);
