@@ -118,6 +118,13 @@ class KlarnaCheckout extends Module
             return;
         }
 
+        if (!Environment::get('ssl')) {
+            // HTTPS uris are required for the kco callbacks
+            $this->Template->gui = 'You are not accessing this page with HTTPS.';
+
+            return;
+        }
+
         $apiUsername = $this->config->klarna_api_username;
         $apiPassword = $this->config->klarna_api_password;
         $connector   = KlarnaConnector::create(
