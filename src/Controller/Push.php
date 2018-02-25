@@ -14,6 +14,7 @@
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 
+use Contao\PageError404;
 use GuzzleHttp\Exception\RequestException;
 use Isotope\Model\ProductCollection\Order as IsotopeOrder;
 use Klarna\Rest\OrderManagement\Order as KlarnaOrder;
@@ -39,7 +40,13 @@ class Push
      */
     public function __invoke($orderId)
     {
-        $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $orderId);
+        if (null === $orderId || null === $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $orderId)) {
+            $objHandler = new $GLOBALS['TL_PTY']['error_404']();
+            /** @var PageError404 $objHandler */
+            $response = $objHandler->getResponse();
+            $response->send();
+            exit;
+        }
 
         $config = $isotopeOrder->getConfig();
         if (!$config->use_klarna) {
