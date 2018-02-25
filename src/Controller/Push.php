@@ -14,6 +14,7 @@
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 
+use Contao\CoreBundle\Exception\PageNotFoundException;
 use GuzzleHttp\Exception\RequestException;
 use Isotope\Model\ProductCollection\Order as IsotopeOrder;
 use Klarna\Rest\OrderManagement\Order as KlarnaOrder;
@@ -34,6 +35,7 @@ class Push
      *
      * @return void
      *
+     * @throws PageNotFoundException If klarna order could not be associated with an order in the system.
      * @throws \RuntimeException
      * @throws ConnectorException
      * @throws RequestException
@@ -42,6 +44,9 @@ class Push
     public function __invoke($orderId, Request $request)
     {
         $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $orderId);
+        if (null === $isotopeOrder) {
+            throw new PageNotFoundException('Order not found: '.$orderId);
+        }
 
         $config = $isotopeOrder->getConfig();
         if (!$config->use_klarna) {
