@@ -11,6 +11,8 @@
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
+$GLOBALS['TL_DCA']['tl_iso_config']['palettes']['__selector__'][] = 'use_klarna';
+
 $GLOBALS['TL_DCA']['tl_iso_config']['palettes']['default'] .= ';{klarna_legend},use_klarna';
 
 $GLOBALS['TL_DCA']['tl_iso_config']['subpalettes']['use_klarna'] = 'klarna_api_username,klarna_api_password,klarna_api_test';
