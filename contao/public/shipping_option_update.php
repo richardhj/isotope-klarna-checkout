@@ -14,5 +14,8 @@
 use Contao\Input;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Controller\ShippingOptionUpdate;
 
+define(TL_MODE, 'FE');
+require '../../../initialize.php';
+
 $shippingOptionUpdate = new ShippingOptionUpdate();
 $shippingOptionUpdate(Input::get('klarna_order_id'));

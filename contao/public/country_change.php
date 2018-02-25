@@ -14,5 +14,8 @@
 use Contao\Input;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Controller\CountryChange;
 
+define(TL_MODE, 'FE');
+require '../../../initialize.php';
+
 $countryChange = new CountryChange();
 $countryChange(Input::get('klarna_order_id'));

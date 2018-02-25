@@ -14,5 +14,8 @@
 use Contao\Input;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Controller\AddressUpdate;
 
+define(TL_MODE, 'FE');
+require '../../../initialize.php';
+
 $addressUpdate = new AddressUpdate();
 $addressUpdate(Input::get('klarna_order_id'));

@@ -14,5 +14,8 @@
 use Contao\Input;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Push;
 
+define(TL_MODE, 'FE');
+require '../../../initialize.php';
+
 $push = new Push();
 $push(Input::get('klarna_order_id'));

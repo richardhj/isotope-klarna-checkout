@@ -13,5 +13,8 @@
 
 use Richardhj\IsotopeKlarnaCheckoutBundle\Controller\OrderValidation;
 
+define(TL_MODE, 'FE');
+require '../../../initialize.php';
+
 $orderValidation = new OrderValidation();
 $orderValidation();
