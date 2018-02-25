@@ -41,10 +41,11 @@ class Push
     public function __invoke($orderId)
     {
         if (null === $orderId || null === $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $orderId)) {
+            global $objPage;
+
             $objHandler = new $GLOBALS['TL_PTY']['error_404']();
             /** @var PageError404 $objHandler */
-            $response = $objHandler->getResponse();
-            $response->send();
+            $objHandler->generate($objPage->id);
             exit;
         }
 

@@ -43,10 +43,11 @@ class OrderValidation
     {
         $data = json_decode(file_get_contents('php://input'));
         if (null === $data) {
+            global $objPage;
+
             $objHandler = new $GLOBALS['TL_PTY']['error_404']();
             /** @var PageError404 $objHandler */
-            $response = $objHandler->getResponse();
-            $response->send();
+            $objHandler->generate($objPage->id);
             exit;
         }
 

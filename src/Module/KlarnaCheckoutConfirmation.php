@@ -124,10 +124,11 @@ class KlarnaCheckoutConfirmation extends Module
             $klarnaCheckout->fetch();
         } catch (ClientException $e) {
             if (404 === $e->getResponse()->getStatusCode()) {
+                global $objPage;
+
                 $objHandler = new $GLOBALS['TL_PTY']['error_404']();
                 /** @var PageError404 $objHandler */
-                $response = $objHandler->getResponse();
-                $response->send();
+                $objHandler->generate($objPage->id);
                 exit;
             }
 
@@ -146,10 +147,11 @@ class KlarnaCheckoutConfirmation extends Module
 
         $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $klarnaCheckout->getId());
         if (null === $isotopeOrder) {
+            global $objPage;
+
             $objHandler = new $GLOBALS['TL_PTY']['error_404']();
             /** @var PageError404 $objHandler */
-            $response = $objHandler->getResponse();
-            $response->send();
+            $objHandler->generate($objPage->id);
             exit;
         }
 
