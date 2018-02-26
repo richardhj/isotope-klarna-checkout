@@ -14,6 +14,7 @@
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Util;
 
 
+use Contao\Database;
 use Contao\Environment;
 use Contao\Model;
 use Isotope\Interfaces\IsotopeProduct;
@@ -168,9 +169,9 @@ final class OrderLine
         $this->quantity         = $this->item->quantity;
         $this->unit_price       = $this->item->getPrice() * 100;
         $this->total_amount     = $this->item->getTotalPrice() * 100;
-        $this->total_tax_amount = $this->item->getTotalPrice() - $this->item->getTaxFreeTotalPrice();
-        $this->tax_rate         = ($this->total_tax_amount / $this->total_amount) * 1000;
+        $this->total_tax_amount = ($this->item->getTotalPrice() - $this->item->getTaxFreeTotalPrice()) * 100;
 
+        $this->addTaxRateForItem();
         $this->addTypeForItem();
         $this->addProductUrlForItem();
         $this->addImageUrlForItem();
@@ -268,6 +269,28 @@ final class OrderLine
             }
 
             $this->image_url = Environment::get('url').'/'.$src;
+        }
+    }
+
+    /**
+     * Add tax_rate.
+     */
+    private function addTaxRateForItem()
+    {
+        $this->tax_rate = 0;
+
+        try {
+            $taxRate = Database::getInstance()->prepare(
+                'SELECT r.rate FROM tl_iso_tax_rate r LEFT JOIN tl_iso_tax_class c ON c.includes=r.id WHERE c.id=?'
+            )->execute($this->item->tax_id);
+
+            if ($taxRate->numRows) {
+                $rate = deserialize($taxRate->rate, true);
+
+                $this->tax_rate = $rate['value'] * 100;
+            }
+        } catch (\Exception $e) {
+            // :-/
         }
     }
 }

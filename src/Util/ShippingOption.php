@@ -109,7 +109,7 @@ final class ShippingOption
     {
         $this->id              = $this->shipping->getId();
         $this->name            = $this->shipping->getLabel();
-        $this->description     = $this->shipping->getNote();
+        $this->description     = strip_tags($this->shipping->getNote());
         $this->price           = $this->shipping->getPrice() * 100;
         $this->shipping_method = self::METHOD_OWN;
 
@@ -139,9 +139,10 @@ final class ShippingOption
 
             /** @var TaxRate|Model $includes */
             $includes = $taxClass->getRelated('includes');
+            $rate = deserialize($includes->rate, true);
 
-            $this->tax_rate   = $includes->rate['value'] * 100;
-            $this->tax_amount = $includes->calculateAmountIncludedInPrice($this->price) * 100;
+            $this->tax_rate   = $rate['value'] * 100;
+            $this->tax_amount = $includes->calculateAmountIncludedInPrice($this->price);
         } catch (\Exception $e) {
             // :-/
         }
