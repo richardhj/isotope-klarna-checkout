@@ -182,7 +182,7 @@ class KlarnaCheckoutConfirmation extends Module
 
         // Update shipping method
         $selectedShipping = $klarnaCheckout['selected_shipping_option'];
-        $isotopeOrder->setShippingMethod(Shipping::findByIdOrAlias($selectedShipping['id']));
+        $isotopeOrder->setShippingMethod(Shipping::findById($selectedShipping['id']));
 
         // Save and complete order
         $isotopeOrder->save();
