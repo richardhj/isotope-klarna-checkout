@@ -17,6 +17,7 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 use Contao\Model;
 use Contao\ModuleModel;
 use Contao\PageError404;
+use Isotope\Isotope;
 use Isotope\Model\Address;
 use Isotope\Model\ProductCollection\Cart;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
@@ -68,6 +69,9 @@ class AddressUpdate
 
         $this->cart->setShippingAddress($address);
         $this->cart->save();
+
+        // Set cart to prevent errors within the Isotope logic.
+        Isotope::setCart($this->cart);
 
         // Since we updated the shipping address, now we can fetch the current shipping methods.
         $shippingOptions = $this->shippingOptions(deserialize($checkoutModule->iso_shipping_modules, true));
