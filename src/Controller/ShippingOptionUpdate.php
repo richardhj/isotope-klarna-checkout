@@ -16,6 +16,7 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\Model;
+use Isotope\Isotope;
 use Isotope\Model\ProductCollection\Cart;
 use Isotope\Model\Shipping;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
@@ -54,6 +55,9 @@ class ShippingOptionUpdate
         $shippingMethod = Shipping::findById($data->selected_shipping_option->id);
         $this->cart->setShippingMethod($shippingMethod);
         $this->cart->save();
+
+        // Set cart to prevent errors within the Isotope logic.
+        Isotope::setCart($this->cart);
 
         // Update order with updated shipping method
         $data->order_amount     = $this->cart->getTotal() * 100;
