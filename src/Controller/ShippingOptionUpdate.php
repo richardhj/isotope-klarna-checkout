@@ -53,7 +53,7 @@ class ShippingOptionUpdate
         /** @var Cart|Model $cart */
         $this->cart = Cart::findOneBy('klarna_order_id', $orderId);
 
-        $shippingMethod = Shipping::findByIdOrAlias($data->selected_shipping_option->id);
+        $shippingMethod = Shipping::findById($data->selected_shipping_option->id);
         $this->cart->setShippingMethod($shippingMethod);
         $this->cart->save();
 
