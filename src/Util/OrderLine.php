@@ -16,6 +16,8 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Util;
 
 use Contao\Environment;
 use Contao\Model;
+use Contao\System;
+use Doctrine\DBAL\Connection;
 use Isotope\Interfaces\IsotopeProduct;
 use Isotope\Model\Product;
 use Isotope\Model\ProductCollectionItem;
@@ -115,6 +117,21 @@ final class OrderLine
     public $product_identifiers;
 
     /**
+     * @var Connection
+     */
+    private $connection;
+
+    /**
+     * OrderLine constructor.
+     *
+     * @param Connection $connection
+     */
+    public function __construct(Connection $connection)
+    {
+        $this->connection = $connection;
+    }
+
+    /**
      * @param Model|ProductCollectionItem $item
      */
     public function setItem($item)
@@ -137,7 +154,10 @@ final class OrderLine
      */
     public static function createFromItem(ProductCollectionItem $item): OrderLine
     {
-        $self = new self();
+        /** @var Connection $connection */
+        $connection = System::getContainer()->get('database_connection');
+
+        $self = new self($connection);
         $self->setItem($item);
         $self->processItem();
 
@@ -151,7 +171,10 @@ final class OrderLine
      */
     public static function createForSurcharge(ProductCollectionSurcharge $surcharge): OrderLine
     {
-        $self = new self();
+        /** @var Connection $connection */
+        $connection = System::getContainer()->get('database_connection');
+
+        $self = new self($connection);
         $self->setSurcharge($surcharge);
         $self->processSurcharge();
 
@@ -168,9 +191,9 @@ final class OrderLine
         $this->quantity         = $this->item->quantity;
         $this->unit_price       = $this->item->getPrice() * 100;
         $this->total_amount     = $this->item->getTotalPrice() * 100;
-        $this->total_tax_amount = $this->item->getTotalPrice() - $this->item->getTaxFreeTotalPrice();
-        $this->tax_rate         = ($this->total_tax_amount / $this->total_amount) * 1000;
+        $this->total_tax_amount = ($this->item->getTotalPrice() - $this->item->getTaxFreeTotalPrice()) * 100;
 
+        $this->addTaxRateForItem();
         $this->addTypeForItem();
         $this->addProductUrlForItem();
         $this->addImageUrlForItem();
@@ -268,6 +291,36 @@ final class OrderLine
             }
 
             $this->image_url = Environment::get('url').'/'.$src;
+        }
+    }
+
+    /**
+     * Add tax_rate.
+     */
+    private function addTaxRateForItem()
+    {
+        $this->tax_rate = 0;
+
+        try {
+            $query = $this->connection->createQueryBuilder()
+                ->select('r.rate')
+                ->from('tl_iso_tax_rate', 'r')
+                ->leftJoin('r', 'tl_iso_tax_class', 'c', 'c.includes=r.id')
+                ->where('c.id=:tax_id')
+                ->setParameter('tax_id', $this->item->tax_id)
+                ->execute();
+
+            $taxRate = $query->fetch(\PDO::FETCH_OBJ);
+            if (null === $taxRate) {
+                return;
+            }
+
+            $rate = deserialize($taxRate->rate, true);
+
+            $this->tax_rate = $rate['value'] * 100;
+
+        } catch (\Exception $e) {
+            // :-/
         }
     }
 }
