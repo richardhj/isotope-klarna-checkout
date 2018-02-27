@@ -132,11 +132,14 @@ class KlarnaCheckoutConfirmation extends Module
         try {
             $klarnaCheckout->fetch();
         } catch (ClientException $e) {
-            if (404 === $e->getResponse()->getStatusCode()) {
+            $response = $e->getResponse();
+            if (null !== $response && 404 === $response->getStatusCode()) {
                 throw new PageNotFoundException('Klarna order not found: ID '.$orderId);
             }
 
-            $this->Template->gui = $e->getResponse()->getReasonPhrase();
+            $this->Template->gui = (null !== $response)
+                ? $response->getReasonPhrase()
+                : $GLOBALS['TL_LANG']['XPT']['error'];
 
             return;
         }

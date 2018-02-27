@@ -35,7 +35,7 @@ class Plugin implements BundlePluginInterface, RoutingPluginInterface
      *
      * @return ConfigInterface[]
      */
-    public function getBundles(ParserInterface $parser)
+    public function getBundles(ParserInterface $parser): array
     {
         return [
             BundleConfig::create(RichardhjIsotopeKlarnaCheckoutBundle::class)

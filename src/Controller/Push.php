@@ -49,7 +49,7 @@ class Push
         }
 
         $config = $isotopeOrder->getConfig();
-        if (!$config->use_klarna) {
+        if (null === $config || !$config->use_klarna) {
             throw new \LogicException('Klarna is not configured in the Isotope config.');
         }
 

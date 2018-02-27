@@ -267,7 +267,9 @@ final class OrderLine
         try {
             $product = $this->item->getProduct();
             $jumpTo  = $this->item->getRelated('jumpTo');
-            if (null !== $jumpTo && $this->item->hasProduct() && $product->isAvailableInFrontend()) {
+            if (null !== $jumpTo && null !== $product
+                && $this->item->hasProduct()
+                && $product->isAvailableInFrontend()) {
                 $this->product_url = Environment::get('url').'/'.$product->generateUrl($jumpTo);
             }
         } catch (\Exception $e) {
@@ -281,7 +283,11 @@ final class OrderLine
     private function addImageUrlForItem()
     {
         $product = $this->item->getProduct();
-        $images  = deserialize($product->images, true);
+        if (null === $product) {
+            return;
+        }
+
+        $images = deserialize($product->images, true);
         if (!empty($images)) {
             $src = $images[0]['src'];
 
