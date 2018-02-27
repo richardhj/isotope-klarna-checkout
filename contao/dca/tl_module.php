@@ -14,7 +14,7 @@
 $GLOBALS['TL_DCA']['tl_module']['palettes']['iso_klarna_checkout'] = '{title_legend},name,headline,type;'
                                                                      .'{config_legend},iso_shipping_modules,nc_notification,klarna_show_subtotal_detail;'
                                                                      .'{redirect_legend},iso_cart_jumpTo,klarna_terms_page,klarna_checkout_page,klarna_confirmation_page,klarna_cancellation_page;'
-                                                                     .'{colors_legend},klarna_color_button,klarna_color_button_text,klarna_color_checkbox,klarna_color_checkbox_checkmark,klarna_color_header,klarna_color_link;'
+                                                                     .'{customization_legend:hide},klarna_color_button,klarna_color_button_text,klarna_color_checkbox,klarna_color_checkbox_checkmark,klarna_color_header,klarna_color_link;'
                                                                      .'{template_legend},customTpl;'
                                                                      .'{protected_legend:hide},protected;'
                                                                      .'{expert_legend:hide},guests,cssID';
@@ -30,9 +30,9 @@ $GLOBALS['TL_DCA']['tl_module']['fields']['klarna_show_subtotal_detail'] = [
     'exclude'   => true,
     'inputType' => 'checkbox',
     'eval'      => [
-        'tl_class' => 'w50',
+        'tl_class' => 'w50 m12',
     ],
-    'sql'       => "char(11) NOT NULL default ''",
+    'sql'       => "char(1) NOT NULL default ''",
 ];
 
 $GLOBALS['TL_DCA']['tl_module']['fields']['klarna_terms_page'] = [
