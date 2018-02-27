@@ -111,7 +111,7 @@ final class ShippingOption
         $this->name            = $this->shipping->getLabel();
         $this->description     = strip_tags($this->shipping->getNote());
         $this->price           = $this->shipping->getPrice() * 100;
-        $this->shipping_method = self::METHOD_OWN;
+        $this->shipping_method = $this->shipping->klarna_shipping_method ?: self::METHOD_OWN;
 
         if (0 !== $this->price) {
             if ($this->shipping->isPercentage()) {
