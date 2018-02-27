@@ -54,16 +54,31 @@ class CountryChange
         /** @var Cart|Model $cart */
         $cart   = Cart::findOneBy('klarna_order_id', $orderId);
         $config = $cart->getConfig();
+        if (null === $config) {
+            $this->errorResponse();
+        }
 
         $allowedCountries = $config->getBillingCountries();
         if (!\in_array($billingCountry, $allowedCountries, true)) {
-            $response = new JsonResponse(['error_type' => 'unsupported_shipping_address']);
-            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-            $response->send();
-            exit;
+            $this->errorResponse();
         }
 
         $response = new JsonResponse($data);
         $response->send();
+    }
+
+    /**
+     * Send a response that will display an error to the customer.
+     *
+     * @return void
+     *
+     * @throws \InvalidArgumentException
+     */
+    private function errorResponse()
+    {
+        $response = new JsonResponse(['error_type' => 'unsupported_shipping_address']);
+        $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        $response->send();
+        exit;
     }
 }

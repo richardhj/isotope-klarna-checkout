@@ -62,6 +62,9 @@ class AddressUpdate
 
         $shippingAddress = $data->shipping_address;
         $checkoutModule  = ModuleModel::findById($this->cart->klarna_checkout_module);
+        if (null === $checkoutModule) {
+            $this->errorResponse();
+        }
 
         $address = $this->cart->getShippingAddress();
         $address = $address ?? Address::createForProductCollection($this->cart);
@@ -76,10 +79,7 @@ class AddressUpdate
         // Since we updated the shipping address, now we can fetch the current shipping methods.
         $shippingOptions = $this->shippingOptions(deserialize($checkoutModule->iso_shipping_modules, true));
         if ([] === $shippingOptions) {
-            $response = new JsonResponse(['error_type' => 'unsupported_shipping_address']);
-            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-            $response->send();
-            exit;
+            $this->errorResponse();
         }
 
         // Update order since shipping method may get updated
@@ -90,5 +90,20 @@ class AddressUpdate
 
         $response = new JsonResponse($data);
         $response->send();
+    }
+
+    /**
+     * Send a response that will display an error to the customer.
+     *
+     * @return void
+     *
+     * @throws \InvalidArgumentException
+     */
+    private function errorResponse()
+    {
+        $response = new JsonResponse(['error_type' => 'unsupported_shipping_address']);
+        $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        $response->send();
+        exit;
     }
 }

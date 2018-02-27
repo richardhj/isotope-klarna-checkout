@@ -123,7 +123,8 @@ class KlarnaCheckoutConfirmation extends Module
         try {
             $klarnaCheckout->fetch();
         } catch (ClientException $e) {
-            if (404 === $e->getResponse()->getStatusCode()) {
+            $response = $e->getResponse();
+            if (null !== $response && 404 === $response->getStatusCode()) {
                 global $objPage;
 
                 $objHandler = new $GLOBALS['TL_PTY']['error_404']();
@@ -132,7 +133,9 @@ class KlarnaCheckoutConfirmation extends Module
                 exit;
             }
 
-            $this->Template->gui = $e->getResponse()->getReasonPhrase();
+            $this->Template->gui = (null !== $response)
+                ? $response->getReasonPhrase()
+                : $GLOBALS['TL_LANG']['XPT']['error'];
 
             return;
         }

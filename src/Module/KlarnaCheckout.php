@@ -177,11 +177,13 @@ class KlarnaCheckout extends Module
                 $shippingAddress = null;
                 $billingAddress  = null;
                 if (FE_USER_LOGGED_IN) {
-                    $address         = Address::findDefaultBillingForMember($this->user->id);
-                    $shippingAddress = $this->getApiDataFromAddress($address);
+                    if ($address = Address::findDefaultBillingForMember($this->user->id)) {
+                        $shippingAddress = $this->getApiDataFromAddress($address);
+                    }
 
-                    $address        = Address::findDefaultShippingForMember($this->user->id);
-                    $billingAddress = $this->getApiDataFromAddress($address);
+                    if ($address = Address::findDefaultShippingForMember($this->user->id)) {
+                        $billingAddress = $this->getApiDataFromAddress($address);
+                    }
                 }
 
                 $klarnaCheckout = new KlarnaOrder($connector);
@@ -250,7 +252,10 @@ class KlarnaCheckout extends Module
             $klarnaCheckout->fetch();
 
         } catch (RequestException $e) {
-            $this->Template->gui = $e->getResponse()->getReasonPhrase();
+            $response = $e->getResponse();
+            $this->Template->gui = (null !== $response)
+                ? $response->getReasonPhrase()
+                : $GLOBALS['TL_LANG']['XPT']['error'];
             System::log('KCO error: '.strip_tags($e->getMessage()), __METHOD__, TL_ERROR);
 
             return;
