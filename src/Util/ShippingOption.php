@@ -113,10 +113,8 @@ final class ShippingOption
         $this->price           = round($this->shipping->getPrice() * 100);
         $this->shipping_method = $this->shipping->klarna_shipping_method ?: self::METHOD_OWN;
 
-        if (0 !== $this->price) {
-            if ($this->shipping->isPercentage()) {
-                $this->name .= ' ('.$this->shipping->getPercentageLabel().')';
-            }
+        if (0 !== $this->price && $this->shipping->isPercentage()) {
+            $this->name .= ' ('.$this->shipping->getPercentageLabel().')';
         }
 
         $this->addTaxData();
