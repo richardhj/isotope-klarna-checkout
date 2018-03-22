@@ -110,7 +110,7 @@ final class ShippingOption
         $this->id              = $this->shipping->getId();
         $this->name            = $this->shipping->getLabel();
         $this->description     = strip_tags($this->shipping->getNote());
-        $this->price           = $this->shipping->getPrice() * 100;
+        $this->price           = round($this->shipping->getPrice() * 100);
         $this->shipping_method = $this->shipping->klarna_shipping_method ?: self::METHOD_OWN;
 
         if (0 !== $this->price) {
@@ -139,9 +139,9 @@ final class ShippingOption
 
             /** @var TaxRate|Model $includes */
             $includes = $taxClass->getRelated('includes');
-            $rate = deserialize($includes->rate, true);
+            $rate     = deserialize($includes->rate, true);
 
-            $this->tax_rate   = $rate['value'] * 100;
+            $this->tax_rate   = round($rate['value'] * 100);
             $this->tax_amount = $includes->calculateAmountIncludedInPrice($this->price);
         } catch (\Exception $e) {
             // :-/
