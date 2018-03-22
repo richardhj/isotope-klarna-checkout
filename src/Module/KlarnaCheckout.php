@@ -156,7 +156,7 @@ class KlarnaCheckout extends Module
                 $klarnaCheckout->update(
                     [
                         'order_amount'     => $this->cart->getTotal() * 100,
-                        'order_tax_amount' => ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
+                        'order_tax_amount' => round(($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100),
                         'order_lines'      => $this->orderLines(),
                     ]
                 );
