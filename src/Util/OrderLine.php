@@ -189,9 +189,9 @@ final class OrderLine
         $this->reference        = $this->item->getSku();
         $this->name             = $this->item->getName();
         $this->quantity         = $this->item->quantity;
-        $this->unit_price       = $this->item->getPrice() * 100;
-        $this->total_amount     = $this->item->getTotalPrice() * 100;
-        $this->total_tax_amount = ($this->item->getTotalPrice() - $this->item->getTaxFreeTotalPrice()) * 100;
+        $this->unit_price       = round($this->item->getPrice() * 100);
+        $this->total_amount     = round($this->item->getTotalPrice() * 100);
+        $this->total_tax_amount = round(($this->item->getTotalPrice() - $this->item->getTaxFreeTotalPrice()) * 100);
 
         $this->addTaxRateForItem();
         $this->addTypeForItem();
@@ -207,12 +207,13 @@ final class OrderLine
         $this->reference    = $this->surcharge->id;
         $this->name         = $this->surcharge->label;
         $this->quantity     = 1;
-        $this->unit_price   = $this->surcharge->total_price * 100;
-        $this->total_amount = $this->surcharge->total_price * 100;
+        $this->unit_price   = round($this->surcharge->total_price * 100);
+        $this->total_amount = round($this->surcharge->total_price * 100);
 
         if ($this->surcharge->hasTax()) {
-            $this->total_tax_amount = ($this->surcharge->total_price - $this->surcharge->tax_free_total_price) * 100;
-            $this->tax_rate         = ($this->total_tax_amount / $this->total_amount) * 1000;
+            $this->total_tax_amount =
+                round(($this->surcharge->total_price - $this->surcharge->tax_free_total_price) * 100);
+            $this->tax_rate         = round(($this->total_tax_amount / $this->total_amount) * 1000);
         } else {
             $this->tax_rate         = 0;
             $this->total_tax_amount = 0;
@@ -323,8 +324,7 @@ final class OrderLine
 
             $rate = deserialize($taxRate->rate, true);
 
-            $this->tax_rate = $rate['value'] * 100;
-
+            $this->tax_rate = round($rate['value'] * 100);
         } catch (\Exception $e) {
             // :-/
         }
