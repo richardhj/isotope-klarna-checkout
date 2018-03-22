@@ -104,7 +104,6 @@ class KlarnaCheckout extends Module
     /**
      * Compile the current element
      *
-     * @throws ConnectorException        When the API replies with an error response
      * @throws \InvalidArgumentException If the JSON cannot be parsed
      * @throws \RuntimeException         On an unexpected API response
      * @throws \RuntimeException         If the response content type is not JSON
@@ -252,11 +251,11 @@ class KlarnaCheckout extends Module
             $klarnaCheckout->fetch();
 
         } catch (RequestException $e) {
-            $response = $e->getResponse();
-            $this->Template->gui = (null !== $response)
-                ? $response->getReasonPhrase()
-                : $GLOBALS['TL_LANG']['XPT']['error'];
-            System::log('KCO error: '.strip_tags($e->getMessage()), __METHOD__, TL_ERROR);
+            $this->handleApiException($e);
+
+            return;
+        } catch (ConnectorException $e) {
+            $this->handleApiException($e);
 
             return;
         }
@@ -282,5 +281,23 @@ class KlarnaCheckout extends Module
         }
 
         return Environment::get('url').'/'.$page->getFrontendUrl();
+    }
+
+    /**
+     * Process an API exception.
+     *
+     * @param RequestException|ConnectorException $e
+     */
+    private function handleApiException($e)
+    {
+        $response = $e->getResponse();
+
+        $this->Template->gui = $GLOBALS['TL_LANG']['XPT']['error'].'<br>';
+        $this->Template->gui .= 'Current time: '.date('Y-m-d H:i:s').'<br>';
+        if ($response !== null) {
+            $this->Template->gui .= 'Error code: '.$response->getReasonPhrase();
+        }
+
+        System::log('KCO error: '.strip_tags($e->getMessage()), __METHOD__, TL_ERROR);
     }
 }
