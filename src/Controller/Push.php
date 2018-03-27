@@ -71,8 +71,8 @@ class Push
         $klarnaOrder->acknowledge();
         $klarnaOrder->updateMerchantReferences(
             [
-                'merchant_reference1' => $isotopeOrder->getUniqueId(),
-                'merchant_reference2' => $isotopeOrder->getDocumentNumber(),
+                'merchant_reference1' => $isotopeOrder->getDocumentNumber(),
+                'merchant_reference2' => $isotopeOrder->getUniqueId(),
             ]
         );
     }
