@@ -169,9 +169,14 @@ final class OrderLine
         $this->quantity         = $this->item->quantity;
         $this->unit_price       = round($this->item->getPrice() * 100);
         $this->total_amount     = round($this->item->getTotalPrice() * 100);
-        $this->total_tax_amount = round(($this->item->getTotalPrice() - $this->item->getTaxFreeTotalPrice()) * 100);
+        $this->total_tax_amount = 0;
 
         $this->addTaxRateForItem();
+        if (0 !== $this->tax_rate) {
+            $this->total_tax_amount =
+                round($this->total_amount - $this->total_amount * 10000 / (10000 + $this->tax_rate));
+        }
+
         $this->addTypeForItem();
         $this->addProductUrlForItem();
         $this->addImageUrlForItem();
