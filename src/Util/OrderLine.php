@@ -19,6 +19,7 @@ use Contao\Model;
 use Contao\System;
 use Doctrine\DBAL\Connection;
 use Isotope\Interfaces\IsotopeProduct;
+use Isotope\Interfaces\IsotopeProductCollection;
 use Isotope\Model\Product;
 use Isotope\Model\ProductCollectionItem;
 use Isotope\Model\ProductCollectionSurcharge;
@@ -45,6 +46,11 @@ final class OrderLine
      * @var ProductCollectionSurcharge
      */
     private $surcharge;
+
+    /**
+     * @var IsotopeProductCollection
+     */
+    private $collection;
 
     /**
      * @var string
@@ -148,17 +154,27 @@ final class OrderLine
     }
 
     /**
-     * @param ProductCollectionItem $item
+     * @param IsotopeProductCollection $collection
+     */
+    public function setCollection(IsotopeProductCollection $collection)
+    {
+        $this->collection = $collection;
+    }
+
+    /**
+     * @param ProductCollectionItem    $item
+     * @param IsotopeProductCollection $collection
      *
      * @return OrderLine
      */
-    public static function createFromItem(ProductCollectionItem $item): OrderLine
+    public static function createFromItem(ProductCollectionItem $item, IsotopeProductCollection $collection): OrderLine
     {
         /** @var Connection $connection */
         $connection = System::getContainer()->get('database_connection');
 
         $self = new self($connection);
         $self->setItem($item);
+        $self->setCollection($collection);
         $self->processItem();
 
         return $self;
@@ -167,15 +183,21 @@ final class OrderLine
     /**
      * @param ProductCollectionSurcharge $surcharge
      *
-     * @return OrderLine
+     * @return OrderLine|null
      */
-    public static function createForSurcharge(ProductCollectionSurcharge $surcharge): OrderLine
+    public static function createForSurcharge(ProductCollectionSurcharge $surcharge)
     {
         /** @var Connection $connection */
         $connection = System::getContainer()->get('database_connection');
 
         $self = new self($connection);
         $self->setSurcharge($surcharge);
+
+        if ($surcharge instanceof ProductCollectionSurcharge\Rule && 'subtotal' !== $surcharge->applyTo) {
+            // In case that the rule applies to the product, we need to alter the $total_discount_amount instead
+            return null;
+        }
+
         $self->processSurcharge();
 
         return $self;
@@ -186,14 +208,21 @@ final class OrderLine
      */
     private function processItem()
     {
-        $this->reference        = $this->item->getSku();
-        $this->name             = $this->item->getName();
-        $this->quantity         = $this->item->quantity;
-        $this->unit_price       = round($this->item->getPrice() * 100);
-        $this->total_amount     = round($this->item->getTotalPrice() * 100);
-        $this->total_tax_amount = round(($this->item->getTotalPrice() - $this->item->getTaxFreeTotalPrice()) * 100);
+        $this->reference = $this->item->getSku();
+        $this->name      = $this->item->getName();
+        $this->quantity  = $this->item->quantity;
+
+        $this->addTotalDiscountAmountForItem();
+        $this->unit_price   = round($this->item->getPrice() * 100);
+        $this->total_amount = round(($this->item->getTotalPrice() - $this->total_discount_amount / 100) * 100);
 
         $this->addTaxRateForItem();
+        $this->total_tax_amount = 0;
+        if (0 !== $this->tax_rate) {
+            $this->total_tax_amount =
+                round($this->total_amount - $this->total_amount * 10000 / (10000 + $this->tax_rate));
+        }
+
         $this->addTypeForItem();
         $this->addProductUrlForItem();
         $this->addImageUrlForItem();
@@ -328,5 +357,23 @@ final class OrderLine
         } catch (\Exception $e) {
             // :-/
         }
+    }
+
+    /**
+     * Add total_discount_amount by walking through the surcharges.
+     */
+    private function addTotalDiscountAmountForItem()
+    {
+        $surcharges = $this->collection->getSurcharges();
+        foreach ($surcharges as $surcharge) {
+            if (!$surcharge instanceof ProductCollectionSurcharge\Rule || 'subtotal' === $surcharge->applyTo) {
+                continue;
+            }
+
+            // FIXME Error will come if rule wants to ADD fees. Value needs to be non-negative.
+            $this->total_discount_amount += ($surcharge->getAmountForCollectionItem($this->item) * (-1));
+        }
+
+        $this->total_discount_amount = round($this->total_discount_amount * 100);
     }
 }

@@ -39,12 +39,12 @@ trait GetOrderLinesTrait
         }
 
         foreach ($this->cart->getItems() as $item) {
-            $return[] = get_object_vars(OrderLine::createFromItem($item));
+            $return[] = get_object_vars(OrderLine::createFromItem($item, $this->cart));
         }
 
         foreach ($this->cart->getSurcharges() as $surcharge) {
-            if ($surcharge->addToTotal) {
-                $return[] = get_object_vars(OrderLine::createForSurcharge($surcharge));
+            if ($surcharge->addToTotal && null !== $orderLine = OrderLine::createForSurcharge($surcharge)) {
+                $return[] = get_object_vars($orderLine);
             }
         }
 
