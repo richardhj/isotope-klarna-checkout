@@ -17,6 +17,7 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
 use Contao\BackendTemplate;
 use Contao\Controller;
 use Contao\CoreBundle\Exception\NoRootPageFoundException;
+use Contao\CoreBundle\Exception\RedirectResponseException;
 use Contao\Environment;
 use Contao\FrontendUser;
 use Contao\Model;
@@ -28,6 +29,7 @@ use GuzzleHttp\Exception\RequestException;
 use Isotope\Isotope;
 use Isotope\Model\Address;
 use Isotope\Model\Config;
+use Isotope\Model\Payment;
 use Klarna\Rest\Checkout\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
@@ -35,6 +37,7 @@ use Klarna\Rest\Transport\Exception\ConnectorException;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\CanCheckoutTrait;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetShippingOptionsTrait;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\PaymentMethod;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\UpdateAddressTrait;
 use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
@@ -130,6 +133,24 @@ class KlarnaCheckout extends Module
         if ($request->isSecure()) {
             // HTTPS uris are required for the kco callbacks
             $this->Template->gui = 'You are not accessing this page with HTTPS.';
+
+            return;
+        }
+
+        if ('process_external_payment' === $request->query->get('act')) {
+            // FIXME condition needs to check wheter external payment method was selected
+            $isotopeOrder = $this->cart;
+            $checkoutForm = $isotopeOrder->hasPayment()
+                ? $isotopeOrder->getPaymentMethod()->checkoutForm($isotopeOrder, $this)
+                : false;
+
+            if (false === $checkoutForm) {
+                throw new RedirectResponseException(
+                    $this->uri($this->klarna_confirmation_page).'?klarna_order_id='.$isotopeOrder->klarna_order_id
+                );
+            }
+
+            $this->Template->gui = $checkoutForm;
 
             return;
         }
@@ -290,6 +311,37 @@ class KlarnaCheckout extends Module
         $this->cart->save();
 
         $this->Template->gui = $klarnaCheckout['html_snippet'];
+    }
+
+    /**
+     * @return array
+     */
+    private function externalPaymentMethods()
+    {
+        $paymentIds = deserialize($this->iso_payment_modules, true);
+        if (empty($paymentIds)) {
+            return [];
+        }
+
+        $methods = [];
+        /** @var Payment[] $paymentMethods */
+        $paymentMethods = Payment::findBy(['id IN ('.implode(',', $paymentIds).')', "enabled='1'"], null);
+        if (null !== $paymentMethods) {
+            foreach ($paymentMethods as $paymentMethod) {
+                if (!$paymentMethod->isAvailable()) {
+                    continue;
+                }
+
+                $methods[] = $paymentMethod;
+            }
+        }
+
+        return array_map(
+            function (Payment $payment) {
+                return get_object_vars(PaymentMethod::createForPaymentMethod($payment));
+            },
+            $methods
+        );
     }
 
     /**
