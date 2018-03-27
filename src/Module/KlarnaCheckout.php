@@ -155,7 +155,7 @@ class KlarnaCheckout extends Module
             try {
                 $klarnaCheckout->update(
                     [
-                        'order_amount'     => $this->cart->getTotal() * 100,
+                        'order_amount'     => round($this->cart->getTotal() * 100),
                         'order_tax_amount' => round(($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100),
                         'order_lines'      => $this->orderLines(),
                     ]
@@ -191,7 +191,7 @@ class KlarnaCheckout extends Module
                         'purchase_country'   => $this->config->country,
                         'purchase_currency'  => $this->config->currency,
                         'locale'             => $objPage->language,
-                        'order_amount'       => $this->cart->getTotal() * 100,
+                        'order_amount'       => round($this->cart->getTotal() * 100),
                         'order_tax_amount'   => round(($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100),
                         'order_lines'        => $this->orderLines(),
                         'merchant_urls'      => [
