@@ -20,6 +20,7 @@ use Contao\PageError404;
 use Isotope\Isotope;
 use Isotope\Model\Address;
 use Isotope\Model\ProductCollection\Cart;
+use Isotope\Model\Shipping;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetShippingOptionsTrait;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\UpdateAddressTrait;
@@ -66,11 +67,18 @@ class AddressUpdate
             $this->errorResponse();
         }
 
+        // Set shipping address
         $address = $this->cart->getShippingAddress();
         $address = $address ?? Address::createForProductCollection($this->cart);
         $address = $this->updateAddressByApiResponse($address, (array)$shippingAddress);
 
         $this->cart->setShippingAddress($address);
+
+        // Set shipping method
+        // Otherwise customers will be able to checkout without shipping fee!
+        $shippingMethod = Shipping::findById($data->selected_shipping_option->id);
+        $this->cart->setShippingMethod($shippingMethod);
+
         $this->cart->save();
 
         // Set cart to prevent errors within the Isotope logic.
