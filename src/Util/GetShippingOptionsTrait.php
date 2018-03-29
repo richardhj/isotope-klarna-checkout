@@ -58,9 +58,11 @@ trait GetShippingOptionsTrait
                 $methods[] = $shippingMethod;
             }
 
-            // Add the default shipping address to the cart
-            if (1 === \count($methods)) {
+            if (false === $this->cart->hasShipping() || false === $this->cart->getShippingMethod()->isAvailable()) {
+                // Set shipping method. This is what Klarna is doing in private.
+                // Otherwise customers will be able to checkout without shipping fee!
                 $this->cart->setShippingMethod($methods[0]);
+                $this->cart->save();
             }
         }
 
