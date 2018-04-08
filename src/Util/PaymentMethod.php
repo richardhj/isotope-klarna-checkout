@@ -34,11 +34,11 @@ final class PaymentMethod
     public $name;
 
     /**
-     * Mandatory absolute HTTPS uri for completing the purchase.
+     * Mandatory absolute HTTPS url for completing the purchase.
      *
      * @var string
      */
-    public $redirect_uri;
+    public $redirect_url;
 
     /**
      * Optional HTTPS uri with image of payment method.
@@ -77,11 +77,17 @@ final class PaymentMethod
     /**
      * @param IsotopePayment $payment
      *
+     * @param string         $redirectUrl
+     *
      * @return PaymentMethod
      */
-    public static function createForPaymentMethod(IsotopePayment $payment): PaymentMethod
+    public static function createForPaymentMethod(IsotopePayment $payment, string $redirectUrl): PaymentMethod
     {
-        return new self($payment);
+        $payment = new self($payment);
+
+        $payment->redirect_url = $redirectUrl;
+
+        return $payment;
     }
 
     /**
@@ -90,7 +96,7 @@ final class PaymentMethod
     private function processPaymentMethod()
     {
         $this->name        = $this->payment->name;
-        $this->fee         = $this->payment->getPrice();
+        $this->fee         = round($this->payment->getPrice() * 100);
         $this->description = $this->payment->note;
     }
 }

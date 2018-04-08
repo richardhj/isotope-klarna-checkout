@@ -17,6 +17,7 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
 use Contao\BackendTemplate;
 use Contao\Controller;
 use Contao\CoreBundle\Exception\NoRootPageFoundException;
+use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\CoreBundle\Exception\RedirectResponseException;
 use Contao\Environment;
 use Contao\FrontendUser;
@@ -30,6 +31,7 @@ use Isotope\Isotope;
 use Isotope\Model\Address;
 use Isotope\Model\Config;
 use Isotope\Model\Payment;
+use Isotope\Model\ProductCollection\Order;
 use Klarna\Rest\Checkout\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
@@ -70,18 +72,27 @@ class KlarnaCheckout extends Module
     private $user;
 
     /**
+     * @var Request
+     */
+    private $request;
+
+    /**
      * KlarnaCheckout constructor.
      *
      * @param ModuleModel $module
      * @param string      $column
+     *
+     * @throws ServiceNotFoundException
+     * @throws ServiceCircularReferenceException
      */
     public function __construct($module, $column = 'main')
     {
         parent::__construct($module, $column);
 
-        $this->config = Isotope::getConfig();
-        $this->cart   = Isotope::getCart();
-        $this->user   = FrontendUser::getInstance();
+        $this->config  = Isotope::getConfig();
+        $this->cart    = Isotope::getCart();
+        $this->user    = FrontendUser::getInstance();
+        $this->request = System::getContainer()->get('request_stack')->getCurrentRequest();
     }
 
     /**
@@ -112,13 +123,13 @@ class KlarnaCheckout extends Module
     /**
      * Compile the current element
      *
-     * @throws NoRootPageFoundException
+     * @throws RedirectResponseException
+     * @throws PageNotFoundException
+     * @throws NoRootPageFoundException  If no root page is found when trying to load the page details of the jumpToCart
      * @throws \InvalidArgumentException If the JSON cannot be parsed
      * @throws \RuntimeException         On an unexpected API response
      * @throws \RuntimeException         If the response content type is not JSON
      * @throws \LogicException           When Guzzle cannot populate the response
-     * @throws ServiceNotFoundException
-     * @throws ServiceCircularReferenceException
      */
     protected function compile()
     {
@@ -128,30 +139,16 @@ class KlarnaCheckout extends Module
             return;
         }
 
-        /** @var Request $request */
-        $request = System::getContainer()->get('request_stack')->getCurrentRequest();
-        if (false === $request->isSecure()) {
+        if (false === $this->request->isSecure()) {
             // HTTPS uris are required for the kco callbacks
             $this->Template->gui = 'You are not accessing this page with HTTPS.';
 
             return;
         }
 
-        if ('process_external_payment' === $request->query->get('act')) {
-            // FIXME condition needs to check wheter external payment method was selected
-            $isotopeOrder = $this->cart;
-            $checkoutForm = $isotopeOrder->hasPayment()
-                ? $isotopeOrder->getPaymentMethod()->checkoutForm($isotopeOrder, $this)
-                : false;
-
-            if (false === $checkoutForm) {
-                throw new RedirectResponseException(
-                    $this->uri($this->klarna_confirmation_page).'?klarna_order_id='.$isotopeOrder->klarna_order_id
-                );
-            }
-
-            $this->Template->gui = $checkoutForm;
-
+        // Process external payment, respect their output.
+        $this->processExternalPaymentMethods();
+        if (null !== $this->Template->gui) {
             return;
         }
 
@@ -186,9 +183,12 @@ class KlarnaCheckout extends Module
             try {
                 $klarnaCheckout->update(
                     [
-                        'order_amount'     => round($this->cart->getTotal() * 100),
-                        'order_tax_amount' => round(($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100),
-                        'order_lines'      => $this->orderLines(),
+                        'order_amount'             => round($this->cart->getTotal() * 100),
+                        'order_tax_amount'         => round(
+                            ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100
+                        ),
+                        'order_lines'              => $this->orderLines(),
+                        'external_payment_methods' => $this->externalPaymentMethods(),
                     ]
                 );
             } catch (RequestException $e) {
@@ -216,13 +216,15 @@ class KlarnaCheckout extends Module
                 $klarnaCheckout = new KlarnaOrder($connector);
                 $klarnaCheckout->create(
                     [
-                        'purchase_country'   => $this->config->country,
-                        'purchase_currency'  => $this->config->currency,
-                        'locale'             => $request->getLocale(),
-                        'order_amount'       => round($this->cart->getTotal() * 100),
-                        'order_tax_amount'   => round(($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100),
-                        'order_lines'        => $this->orderLines(),
-                        'merchant_urls'      => [
+                        'purchase_country'         => $this->config->country,
+                        'purchase_currency'        => $this->config->currency,
+                        'locale'                   => $this->request->getLocale(),
+                        'order_amount'             => round($this->cart->getTotal() * 100),
+                        'order_tax_amount'         => round(
+                            ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100
+                        ),
+                        'order_lines'              => $this->orderLines(),
+                        'merchant_urls'            => [
                             'terms'                  => $this->uri($this->klarna_terms_page),
                             'checkout'               => $this->uri($this->klarna_checkout_page),
                             'confirmation'           => $this->uri($this->klarna_confirmation_page)
@@ -261,11 +263,14 @@ class KlarnaCheckout extends Module
                                 UrlGeneratorInterface::ABSOLUTE_URL
                             ),
                         ],
-                        'billing_address'    => $billingAddress,
-                        'shipping_address'   => $shippingAddress,
-                        'shipping_options'   => $this->shippingOptions(deserialize($this->iso_shipping_modules, true)),
-                        'shipping_countries' => $this->config->getShippingCountries(),
-                        'options'            => [
+                        'billing_address'          => $billingAddress,
+                        'shipping_address'         => $shippingAddress,
+                        'shipping_options'         => $this->shippingOptions(
+                            deserialize($this->iso_shipping_modules, true)
+                        ),
+                        'shipping_countries'       => $this->config->getShippingCountries(),
+                        'external_payment_methods' => $this->externalPaymentMethods(),
+                        'options'                  => [
                             'allow_separate_shipping_address'   => [] !== $this->config->getShippingFields(),
                             'color_button'                      => $this->klarna_color_button
                                 ? '#'.$this->klarna_color_button
@@ -288,7 +293,7 @@ class KlarnaCheckout extends Module
                             'require_validate_callback_success' => true,
                             'show_subtotal_detail'              => (bool)$this->klarna_show_subtotal_detail,
                         ],
-                        'merchant_data'      => http_build_query(['member' => $this->user->id ?? null]),
+                        'merchant_data'            => http_build_query(['member' => $this->user->id ?? null]),
                     ]
                 );
 
@@ -314,9 +319,84 @@ class KlarnaCheckout extends Module
     }
 
     /**
+     * Process external payment methods. That means, we are listening to the queries "step=complete" und "step=process".
+     *
+     * @throws RedirectResponseException
+     * @throws PageNotFoundException
+     */
+    private function processExternalPaymentMethods()
+    {
+        switch ($this->request->query->get('step')) {
+            case 'complete':
+                /** @var Order|Model $isotopeOrder */
+                if (null === ($isotopeOrder = Order::findOneBy('uniqid', $this->request->query->get('uri')))) {
+                    if ($this->cart->isEmpty()) {
+                        throw new PageNotFoundException(
+                            'Order with unique id not found: '.$this->request->query->get('uri')
+                        );
+                    }
+
+                    $this->Template->gui = 'An error occurred.';
+
+                    return;
+                }
+
+                // Order already completed (see isotope/core#1441)
+                if ($isotopeOrder->checkout_complete) {
+                    throw new RedirectResponseException(
+                        $this->uri($this->klarna_confirmation_page).'?klarna_order_id='.$isotopeOrder->klarna_order_id
+                    );
+                }
+
+                // No external payment
+                if (false === $isotopeOrder->hasPayment()) {
+                    return;
+                }
+
+                $processPayment = $isotopeOrder->getPaymentMethod()->processPayment($isotopeOrder, $this);
+                if (true === $processPayment && $isotopeOrder->checkout() && $isotopeOrder->complete()) {
+                    throw new RedirectResponseException(
+                        $this->uri($this->klarna_confirmation_page).'?klarna_order_id='
+                        .$isotopeOrder->klarna_order_id
+                    );
+                }
+
+                $this->Template->gui = 'An error occurred.';
+
+                return;
+
+                break;
+
+
+            case 'process':
+                $isotopeOrder = $this->cart->getDraftOrder();
+
+                // No external payment
+                if (false === $isotopeOrder->hasPayment()) {
+                    return;
+                }
+
+                // No "nice" urls please
+                if (false !== ($k = array_search('step', $GLOBALS['TL_AUTO_ITEM'], true))) {
+                    unset($GLOBALS['TL_AUTO_ITEM'][$k]);
+                }
+
+                // Generate checkout form that redirects to the payment provider
+                $checkoutForm = $isotopeOrder->getPaymentMethod()->checkoutForm($isotopeOrder, $this);
+                if (false === $checkoutForm) {
+                    throw new RedirectResponseException($this->request->getUri().'?step=complete');
+                }
+
+                $this->Template->gui = $checkoutForm;
+
+                break;
+        }
+    }
+
+    /**
      * @return array
      */
-    private function externalPaymentMethods()
+    private function externalPaymentMethods(): array
     {
         $paymentIds = deserialize($this->iso_payment_modules, true);
         if (empty($paymentIds)) {
@@ -338,7 +418,12 @@ class KlarnaCheckout extends Module
 
         return array_map(
             function (Payment $payment) {
-                return get_object_vars(PaymentMethod::createForPaymentMethod($payment));
+                return get_object_vars(
+                    PaymentMethod::createForPaymentMethod(
+                        $payment,
+                        $this->request->getUri().'?step=process'
+                    )
+                );
             },
             $methods
         );

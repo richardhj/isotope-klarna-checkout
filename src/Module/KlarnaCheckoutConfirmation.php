@@ -117,27 +117,6 @@ class KlarnaCheckoutConfirmation extends Module
             return;
         }
 
-        // Comment for external payment methods support
-//        $strBuffer = $objOrder->hasPayment() ? $objOrder->getPaymentMethod()->processPayment($objOrder, $this) : true;
-//
-//        // true means the payment is successful and order should be completed
-//        if ($strBuffer === true) {
-//            // If checkout is successful, complete order and redirect to confirmation page
-//            if ($objOrder->checkout() && $objOrder->complete()) {
-//                \Controller::redirect(
-//                    Url::addQueryString('uid=' . $objOrder->uniqid, $this->orderCompleteJumpTo)
-//                );
-//            }
-//
-//            // Checkout failed, show error message
-//            static::redirectToStep(self::STEP_FAILED);
-//        }
-//
-//        // False means payment has failed
-//        elseif ($strBuffer === false) {
-//            static::redirectToStep(self::STEP_FAILED);
-//        }
-
         /** @var Request $request */
         $request     = System::getContainer()->get('request_stack')->getCurrentRequest();
         $orderId     = $request->query->get('klarna_order_id');
