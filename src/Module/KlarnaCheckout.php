@@ -27,6 +27,7 @@ use Contao\ModuleModel;
 use Contao\PageModel;
 use Contao\System;
 use GuzzleHttp\Exception\RequestException;
+use Haste\Input\Input;
 use Isotope\Isotope;
 use Isotope\Model\Address;
 use Isotope\Model\Config;
@@ -326,7 +327,7 @@ class KlarnaCheckout extends Module
      */
     private function processExternalPaymentMethods()
     {
-        switch ($this->request->query->get('step')) {
+        switch (Input::getAutoItem('step')) {
             case 'complete':
                 /** @var Order|Model $isotopeOrder */
                 if (null === ($isotopeOrder = Order::findOneBy('uniqid', $this->request->query->get('uri')))) {
@@ -382,11 +383,6 @@ class KlarnaCheckout extends Module
 
                     $isotopeOrder->setPaymentMethod($payment);
                     $isotopeOrder->save();
-                }
-
-                // No "nice" urls please
-                if (false !== ($k = array_search('step', $GLOBALS['TL_AUTO_ITEM'], true))) {
-                    unset($GLOBALS['TL_AUTO_ITEM'][$k]);
                 }
 
                 // Generate checkout form that redirects to the payment provider
