@@ -185,12 +185,11 @@ class KlarnaCheckout extends Module
             try {
                 $klarnaCheckout->update(
                     [
-                        'order_amount'             => round($this->cart->getTotal() * 100),
-                        'order_tax_amount'         => round(
+                        'order_amount'     => round($this->cart->getTotal() * 100),
+                        'order_tax_amount' => round(
                             ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100
                         ),
-                        'order_lines'              => $this->orderLines(),
-                        'external_payment_methods' => $this->externalPaymentMethods(),
+                        'order_lines'      => $this->orderLines(),
                     ]
                 );
             } catch (RequestException $e) {
