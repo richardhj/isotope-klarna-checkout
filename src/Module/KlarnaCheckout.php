@@ -360,7 +360,7 @@ class KlarnaCheckout extends Module
                     $allowedPaymentIds = deserialize($this->iso_payment_modules, true);
                     if (null === $payment
                         || false === $payment->isAvailable()
-                        || false === \in_array($payment->getId(), $allowedPaymentIds, true)) {
+                        || false === \in_array($payment->getId(), $allowedPaymentIds, false)) {
                         $this->Template->gui = 'An error occurred.';
 
                         return;
