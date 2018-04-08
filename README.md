@@ -31,6 +31,16 @@ the native Isotope checkout module.
 2. **Klarna checkout confirmation:** Place this module on a page the user get redirected after the checkout being
 completed. This modules displays a confirmation iFrame (order review) and finishes the order in Isotope.
 
+This checkout also supports [External Payment Modules][link-klarna-api-external-payment]. You can enable any payment
+method you are already using (e.g. PayPal) and it should work as well! Note that for such orders the order confirmation
+will differ (no Klarna iFrame).
+
+## Who did it?
+
+Richard Henkenjohann <richardhenkenjohann@googlemail.com>
+
+Please elaborate monetary support for this extension's author in case this extension is doing business in your eCommerce.
+
 ## Contributing
 
 You always have to test/debug on a system with publicly available URIs. This means you cannot run Klarna checkout on 
@@ -48,3 +58,4 @@ That being said, I recommend to configure xDebug on a staging system. You also h
 [link-packagist]: https://packagist.org/packages/richardhj/isotope-klarna-checkout
 [link-dependencies]: https://www.versioneye.com/php/richardhj:isotope-klarna-checkout
 [link-klarna]: https://klarna.com
+[link-klarna-api-external-payment]: https://developers.klarna.com/en/de/kco-v3/checkout/external-payment-methods
