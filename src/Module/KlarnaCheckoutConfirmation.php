@@ -110,7 +110,12 @@ class KlarnaCheckoutConfirmation extends Module
             return;
         }
 
-        $orderId     = Input::get('klarna_order_id');
+        // Noting to do here for external payment methods.
+        if (null !== Input::get('uid')) {
+            return;
+        }
+
+        $orderId     = $this->request->query->get('klarna_order_id');
         $apiUsername = $this->config->klarna_api_username;
         $apiPassword = $this->config->klarna_api_password;
         $connector   = KlarnaConnector::create(

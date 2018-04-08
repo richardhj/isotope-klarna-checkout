@@ -21,12 +21,17 @@ use Contao\FrontendUser;
 use Contao\Model;
 use Contao\Module;
 use Contao\ModuleModel;
+use Contao\PageError404;
 use Contao\PageModel;
 use Contao\System;
 use GuzzleHttp\Exception\RequestException;
+use Haste\Input\Input;
 use Isotope\Isotope;
 use Isotope\Model\Address;
 use Isotope\Model\Config;
+use Isotope\Model\Payment;
+use Isotope\Model\ProductCollection\Order;
+use Isotope\Module\Checkout as NativeCheckout;
 use Klarna\Rest\Checkout\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
@@ -34,6 +39,7 @@ use Klarna\Rest\Transport\Exception\ConnectorException;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\CanCheckoutTrait;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetShippingOptionsTrait;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\PaymentMethod;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\UpdateAddressTrait;
 
 class KlarnaCheckout extends Module
@@ -124,6 +130,12 @@ class KlarnaCheckout extends Module
             return;
         }
 
+        // Process external payment, respect their output.
+        $this->processExternalPaymentMethods();
+        if (null !== $this->Template->gui) {
+            return;
+        }
+
         $apiUsername = $this->config->klarna_api_username;
         $apiPassword = $this->config->klarna_api_password;
         $connector   = KlarnaConnector::create(
@@ -188,13 +200,15 @@ class KlarnaCheckout extends Module
                 $klarnaCheckout = new KlarnaOrder($connector);
                 $klarnaCheckout->create(
                     [
-                        'purchase_country'   => $this->config->country,
-                        'purchase_currency'  => $this->config->currency,
-                        'locale'             => $objPage->language,
-                        'order_amount'       => round($this->cart->getTotal() * 100),
-                        'order_tax_amount'   => round(($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100),
-                        'order_lines'        => $this->orderLines(),
-                        'merchant_urls'      => [
+                        'purchase_country'         => $this->config->country,
+                        'purchase_currency'        => $this->config->currency,
+                        'locale'                   => $objPage->language,
+                        'order_amount'             => round($this->cart->getTotal() * 100),
+                        'order_tax_amount'         => round(
+                            ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100
+                        ),
+                        'order_lines'              => $this->orderLines(),
+                        'merchant_urls'            => [
                             'terms'                  => $this->uri($this->klarna_terms_page),
                             'checkout'               => $this->uri($this->klarna_checkout_page),
                             'confirmation'           => $this->uri($this->klarna_confirmation_page)
@@ -214,11 +228,14 @@ class KlarnaCheckout extends Module
                             'validation'             => Environment::get('url')
                                                         .'/system/modules/isotope-klarna-checkout/public/validation.php',
                         ],
-                        'billing_address'    => $billingAddress,
-                        'shipping_address'   => $shippingAddress,
-                        'shipping_options'   => $this->shippingOptions(deserialize($this->iso_shipping_modules, true)),
-                        'shipping_countries' => $this->config->getShippingCountries(),
-                        'options'            => [
+                        'billing_address'          => $billingAddress,
+                        'shipping_address'         => $shippingAddress,
+                        'shipping_options'         => $this->shippingOptions(
+                            deserialize($this->iso_shipping_modules, true)
+                        ),
+                        'shipping_countries'       => $this->config->getShippingCountries(),
+                        'external_payment_methods' => $this->externalPaymentMethods(),
+                        'options'                  => [
                             'allow_separate_shipping_address'   => [] !== $this->config->getShippingFields(),
                             'color_button'                      => $this->klarna_color_button
                                 ? '#'.$this->klarna_color_button
@@ -241,7 +258,7 @@ class KlarnaCheckout extends Module
                             'require_validate_callback_success' => true,
                             'show_subtotal_detail'              => (bool)$this->klarna_show_subtotal_detail,
                         ],
-                        'merchant_data'      => http_build_query(['member' => $this->user->id ?? null]),
+                        'merchant_data'            => http_build_query(['member' => $this->user->id ?? null]),
                     ]
                 );
 
@@ -264,6 +281,145 @@ class KlarnaCheckout extends Module
         $this->cart->save();
 
         $this->Template->gui = $klarnaCheckout['html_snippet'];
+    }
+
+    /**
+     * Process external payment methods. That means, we are listening to the queries "step=complete" und "step=process".
+     */
+    private function processExternalPaymentMethods()
+    {
+        switch (Input::getAutoItem('step')) {
+            case 'complete':
+                /** @var Order|Model $isotopeOrder */
+                if (null === ($isotopeOrder = Order::findOneBy('uniqid', $this->request->query->get('uid')))) {
+                    if ($this->cart->isEmpty()) {
+                        global $objPage;
+
+                        $objHandler = new $GLOBALS['TL_PTY']['error_404']();
+                        /** @var PageError404 $objHandler */
+                        $objHandler->generate($objPage->id);
+                        exit;
+                    }
+
+                    $this->Template->gui = 'An error occurred.';
+
+                    return;
+                }
+
+                // Order already completed (see isotope/core#1441)
+                if ($isotopeOrder->checkout_complete) {
+                    Controller::redirect(
+                        $this->uri($this->klarna_confirmation_page).'?uid='.$isotopeOrder->getUniqueId()
+                    );
+                }
+
+                // No external payment
+                if (false === $isotopeOrder->hasPayment()) {
+                    return;
+                }
+
+                $processPayment = $isotopeOrder->getPaymentMethod()->processPayment($isotopeOrder, $this);
+                if (true === $processPayment) {
+                    // If checkout is successful, complete order and redirect to confirmation page
+                    if ($isotopeOrder->checkout() && $isotopeOrder->complete()) {
+                        Controller::redirect(
+                            $this->uri($this->klarna_confirmation_page).'?uid='.$isotopeOrder->getUniqueId()
+                        );
+                    }
+
+                    // Checkout failed, show error message
+                    $this->Template->gui = 'An error occurred.';
+
+                    return;
+                }
+
+                // False means payment has failed
+                if (false === $processPayment) {
+                    $this->Template->gui = 'An error occurred.';
+
+                    return;
+                }
+
+                // Otherwise we assume a string that shows a message to customer
+                $this->Template->gui = $processPayment;
+
+                return;
+
+                break;
+
+
+            case 'process':
+                $isotopeOrder = $this->cart->getDraftOrder();
+
+                $isotopeOrder->nc_notification      = $this->nc_notification;
+                $isotopeOrder->iso_addToAddressbook = $this->iso_addToAddressbook;
+
+                if (false === $isotopeOrder->hasPayment()) {
+                    /** @var Payment $payment */
+                    $payment           = Payment::findByPk($this->request->query->get('pay'));
+                    $allowedPaymentIds = deserialize($this->iso_payment_modules, true);
+                    if (null === $payment
+                        || false === $payment->isAvailable()
+                        || false === \in_array($payment->getId(), $allowedPaymentIds, true)) {
+                        $this->Template->gui = 'An error occurred.';
+
+                        return;
+                    }
+
+                    $isotopeOrder->setPaymentMethod($payment);
+                    $isotopeOrder->save();
+                }
+
+                // Generate checkout form that redirects to the payment provider
+                $checkoutForm = $isotopeOrder->getPaymentMethod()->checkoutForm($isotopeOrder, $this);
+                if (false === $checkoutForm) {
+                    Controller::redirect(
+                        NativeCheckout::generateUrlForStep(NativeCheckout::STEP_COMPLETE, $isotopeOrder->getUniqueId())
+                    );
+                }
+
+                $this->Template->gui = $checkoutForm;
+
+                break;
+        }
+    }
+
+    /**
+     * @return array
+     */
+    private function externalPaymentMethods(): array
+    {
+        $paymentIds = deserialize($this->iso_payment_modules, true);
+        if (empty($paymentIds)) {
+            return [];
+        }
+
+        $methods = [];
+        /** @var Payment[] $paymentMethods */
+        $paymentMethods = Payment::findBy(['id IN ('.implode(',', $paymentIds).')', "enabled='1'"], null);
+        if (null !== $paymentMethods) {
+            foreach ($paymentMethods as $paymentMethod) {
+                if (!$paymentMethod->isAvailable()) {
+                    continue;
+                }
+
+                $methods[] = $paymentMethod;
+            }
+        }
+
+        return array_map(
+            function (Payment $payment) {
+                return get_object_vars(
+                    PaymentMethod::createForPaymentMethod(
+                        $payment,
+                        $this->request->getSchemeAndHttpHost().'/'
+                        .NativeCheckout::generateUrlForStep(NativeCheckout::STEP_PROCESS)
+                        .'?pay='.$payment->getId()
+                    )
+                );
+            },
+            $methods
+        );
     }
 
     /**
