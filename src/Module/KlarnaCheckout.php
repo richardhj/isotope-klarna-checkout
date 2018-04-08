@@ -291,7 +291,7 @@ class KlarnaCheckout extends Module
         switch (Input::getAutoItem('step')) {
             case 'complete':
                 /** @var Order|Model $isotopeOrder */
-                if (null === ($isotopeOrder = Order::findOneBy('uniqid', $this->request->query->get('uid')))) {
+                if (null === ($isotopeOrder = Order::findOneBy('uniqid', Input::get('uid')))) {
                     if ($this->cart->isEmpty()) {
                         global $objPage;
 
@@ -356,7 +356,7 @@ class KlarnaCheckout extends Module
 
                 if (false === $isotopeOrder->hasPayment()) {
                     /** @var Payment $payment */
-                    $payment           = Payment::findByPk($this->request->query->get('pay'));
+                    $payment           = Payment::findByPk(Input::get('pay'));
                     $allowedPaymentIds = deserialize($this->iso_payment_modules, true);
                     if (null === $payment
                         || false === $payment->isAvailable()
@@ -412,7 +412,7 @@ class KlarnaCheckout extends Module
                 return get_object_vars(
                     PaymentMethod::createForPaymentMethod(
                         $payment,
-                        $this->request->getSchemeAndHttpHost().'/'
+                        Environment::get('url').'/'
                         .NativeCheckout::generateUrlForStep(NativeCheckout::STEP_PROCESS)
                         .'?pay='.$payment->getId()
                     )
