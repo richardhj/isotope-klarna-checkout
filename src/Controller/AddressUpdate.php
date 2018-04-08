@@ -59,11 +59,19 @@ class AddressUpdate
         /** @var Cart|Model $cart */
         $this->cart = Cart::findOneBy('klarna_order_id', $orderId);
 
+        $billingAddress  = $data->billing_address;
         $shippingAddress = $data->shipping_address;
         $checkoutModule  = ModuleModel::findById($this->cart->klarna_checkout_module);
         if (null === $checkoutModule) {
             $this->errorResponse();
         }
+
+        // Set billing address
+        $address = $this->cart->getBillingAddress();
+        $address = $address ?? Address::createForProductCollection($this->cart);
+        $address = $this->updateAddressByApiResponse($address, (array)$billingAddress);
+
+        $this->cart->setBillingAddress($address);
 
         // Set shipping address
         $address = $this->cart->getShippingAddress();
@@ -90,8 +98,8 @@ class AddressUpdate
 
         // Update order since shipping method may get updated
         $data->shipping_options = $shippingOptions;
-        $data->order_amount     = $this->cart->getTotal() * 100;
-        $data->order_tax_amount = ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100;
+        $data->order_amount     = round($this->cart->getTotal() * 100);
+        $data->order_tax_amount = round(($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100);
         $data->order_lines      = $this->orderLines();
 
         $response = new JsonResponse($data);
