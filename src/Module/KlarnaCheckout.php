@@ -371,9 +371,17 @@ class KlarnaCheckout extends Module
             case 'process':
                 $isotopeOrder = $this->cart->getDraftOrder();
 
-                // No external payment
                 if (false === $isotopeOrder->hasPayment()) {
-                    return;
+                    /** @var Payment $payment */
+                    $payment = Payment::findByPk($this->request->query->get('pay'));
+                    if (null === $payment || false === $payment->isAvailable()) {
+                        $this->Template->gui = 'An error occurred.';
+
+                        return;
+                    }
+
+                    $isotopeOrder->setPaymentMethod($payment);
+                    $isotopeOrder->save();
                 }
 
                 // No "nice" urls please
@@ -421,7 +429,7 @@ class KlarnaCheckout extends Module
                 return get_object_vars(
                     PaymentMethod::createForPaymentMethod(
                         $payment,
-                        $this->request->getUri().'?step=process'
+                        $this->request->getUri().'?step=process&pay='.$payment->getId()
                     )
                 );
             },
