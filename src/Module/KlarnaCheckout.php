@@ -127,7 +127,7 @@ class KlarnaCheckout extends Module
 
         /** @var Request $request */
         $request = System::getContainer()->get('request_stack')->getCurrentRequest();
-        if ($request->isSecure()) {
+        if (false === $request->isSecure()) {
             // HTTPS uris are required for the kco callbacks
             $this->Template->gui = 'You are not accessing this page with HTTPS.';
 
