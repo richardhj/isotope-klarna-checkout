@@ -33,6 +33,7 @@ use Isotope\Model\Address;
 use Isotope\Model\Config;
 use Isotope\Model\Payment;
 use Isotope\Model\ProductCollection\Order;
+use Isotope\Module\Checkout as NativeCheckout;
 use Klarna\Rest\Checkout\Order as KlarnaOrder;
 use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
@@ -330,10 +331,10 @@ class KlarnaCheckout extends Module
         switch (Input::getAutoItem('step')) {
             case 'complete':
                 /** @var Order|Model $isotopeOrder */
-                if (null === ($isotopeOrder = Order::findOneBy('uniqid', $this->request->query->get('uri')))) {
+                if (null === ($isotopeOrder = Order::findOneBy('uniqid', $this->request->query->get('uid')))) {
                     if ($this->cart->isEmpty()) {
                         throw new PageNotFoundException(
-                            'Order with unique id not found: '.$this->request->query->get('uri')
+                            'Order with unique id not found: '.$this->request->query->get('uid')
                         );
                     }
 
@@ -388,7 +389,9 @@ class KlarnaCheckout extends Module
                 // Generate checkout form that redirects to the payment provider
                 $checkoutForm = $isotopeOrder->getPaymentMethod()->checkoutForm($isotopeOrder, $this);
                 if (false === $checkoutForm) {
-                    throw new RedirectResponseException($this->request->getUri().'?step=complete');
+                    throw new RedirectResponseException(
+                        NativeCheckout::generateUrlForStep(NativeCheckout::STEP_COMPLETE, $isotopeOrder->getUniqueId())
+                    );
                 }
 
                 $this->Template->gui = $checkoutForm;
@@ -425,7 +428,9 @@ class KlarnaCheckout extends Module
                 return get_object_vars(
                     PaymentMethod::createForPaymentMethod(
                         $payment,
-                        $this->request->getUri().'?step=process&pay='.$payment->getId()
+                        $this->request->getSchemeAndHttpHost().'/'
+                        .NativeCheckout::generateUrlForStep(NativeCheckout::STEP_PROCESS)
+                        .'?pay='.$payment->getId()
                     )
                 );
             },
