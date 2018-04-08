@@ -346,7 +346,7 @@ class KlarnaCheckout extends Module
                 // Order already completed (see isotope/core#1441)
                 if ($isotopeOrder->checkout_complete) {
                     throw new RedirectResponseException(
-                        $this->uri($this->klarna_confirmation_page).'?klarna_order_id='.$isotopeOrder->klarna_order_id
+                        $this->uri($this->klarna_confirmation_page).'?uid='.$isotopeOrder->getUniqueId()
                     );
                 }
 
@@ -356,14 +356,29 @@ class KlarnaCheckout extends Module
                 }
 
                 $processPayment = $isotopeOrder->getPaymentMethod()->processPayment($isotopeOrder, $this);
-                if (true === $processPayment && $isotopeOrder->checkout() && $isotopeOrder->complete()) {
-                    throw new RedirectResponseException(
-                        $this->uri($this->klarna_confirmation_page).'?klarna_order_id='
-                        .$isotopeOrder->klarna_order_id
-                    );
+                if (true === $processPayment) {
+                    // If checkout is successful, complete order and redirect to confirmation page
+                    if ($isotopeOrder->checkout() && $isotopeOrder->complete()) {
+                        throw new RedirectResponseException(
+                            $this->uri($this->klarna_confirmation_page).'?uid='.$isotopeOrder->getUniqueId()
+                        );
+                    }
+
+                    // Checkout failed, show error message
+                    $this->Template->gui = 'An error occurred.';
+
+                    return;
                 }
 
-                $this->Template->gui = 'An error occurred.';
+                // False means payment has failed
+                if (false === $processPayment) {
+                    $this->Template->gui = 'An error occurred.';
+
+                    return;
+                }
+
+                // Otherwise we assume a string that shows a message to customer
+                $this->Template->gui = $processPayment;
 
                 return;
 
@@ -372,6 +387,9 @@ class KlarnaCheckout extends Module
 
             case 'process':
                 $isotopeOrder = $this->cart->getDraftOrder();
+
+                $isotopeOrder->nc_notification      = $this->nc_notification;
+                $isotopeOrder->iso_addToAddressbook = $this->iso_addToAddressbook;
 
                 if (false === $isotopeOrder->hasPayment()) {
                     /** @var Payment $payment */

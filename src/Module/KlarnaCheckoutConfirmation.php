@@ -56,6 +56,11 @@ class KlarnaCheckoutConfirmation extends Module
     private $config;
 
     /**
+     * @var Request
+     */
+    private $request;
+
+    /**
      * KlarnaCheckoutConfirmation constructor.
      *
      * @param ModuleModel $module
@@ -65,7 +70,8 @@ class KlarnaCheckoutConfirmation extends Module
     {
         parent::__construct($module, $column);
 
-        $this->config = Isotope::getConfig();
+        $this->config  = Isotope::getConfig();
+        $this->request = System::getContainer()->get('request_stack')->getCurrentRequest();
     }
 
     /**
@@ -117,9 +123,12 @@ class KlarnaCheckoutConfirmation extends Module
             return;
         }
 
-        /** @var Request $request */
-        $request     = System::getContainer()->get('request_stack')->getCurrentRequest();
-        $orderId     = $request->query->get('klarna_order_id');
+        // Noting to do here for external payment methods.
+        if (null !== $this->request->query->get('uid')) {
+            return;
+        }
+
+        $orderId     = $this->request->query->get('klarna_order_id');
         $apiUsername = $this->config->klarna_api_username;
         $apiPassword = $this->config->klarna_api_password;
         $connector   = KlarnaConnector::create(
