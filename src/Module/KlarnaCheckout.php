@@ -410,7 +410,7 @@ class KlarnaCheckout extends Module
                 $checkoutForm = $isotopeOrder->getPaymentMethod()->checkoutForm($isotopeOrder, $this);
                 if (false === $checkoutForm) {
                     throw new RedirectResponseException(
-                        NativeCheckout::generateUrlForStep(NativeCheckout::STEP_COMPLETE, $isotopeOrder->getUniqueId())
+                        NativeCheckout::generateUrlForStep(NativeCheckout::STEP_COMPLETE, $isotopeOrder)
                     );
                 }
 
