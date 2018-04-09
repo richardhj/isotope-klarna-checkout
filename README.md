@@ -17,6 +17,9 @@ Via Composer
 $ composer require richardhj/isotope-klarna-checkout
 ```
 
+There are two version branches: v0.3 supporting Contao 3 installations and v1.0 supporting any Contao 4 managed
+installation.
+
 ## Usage
 
 The Klarna checkout will use the configuration of your Isotope shop. So make sure that you have configured your shop
@@ -39,9 +42,11 @@ will differ (no Klarna iFrame).
 
 Richard Henkenjohann <richardhenkenjohann@googlemail.com>
 
-Please elaborate monetary support for this extension's author in case this extension is doing business in your eCommerce.
+Please consider monetary support for this extension's author in case this extension is doing business in your eCommerce.
 
 ## Contributing
+
+The API documentation is available at <https://developers.klarna.com/api>.
 
 You always have to test/debug on a system with publicly available URIs. This means you cannot run Klarna checkout on 
 localhost, as the Klarna checkout relies on the callbacks (e.g. order_validation). The checkout will fail when the
