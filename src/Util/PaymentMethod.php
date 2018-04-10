@@ -61,6 +61,13 @@ final class PaymentMethod
      */
     public $description;
 
+    /**
+     * If specified, limits the method to the listed countries (alpha 2 codes).
+     *
+     * @var array
+     */
+    public $countries;
+
 
     /**
      * PaymentMethod constructor.
@@ -98,5 +105,10 @@ final class PaymentMethod
         $this->name        = $this->payment->name;
         $this->fee         = round($this->payment->getPrice() * 100);
         $this->description = $this->payment->note;
+
+        $countries = deserialize($this->payment->countries, true);
+        if ([] !== $countries) {
+            $this->countries = $countries;
+        }
     }
 }

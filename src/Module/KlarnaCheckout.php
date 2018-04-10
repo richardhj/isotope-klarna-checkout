@@ -361,14 +361,15 @@ class KlarnaCheckout extends Module
                     if (null === $payment
                         || false === $payment->isAvailable()
                         || false === \in_array($payment->getId(), $allowedPaymentIds, false)) {
-                        $this->Template->gui = 'An error occurred.';
+                        $this->Template->gui = 'The payment method you\'ve selected prior is not available.';
 
                         return;
                     }
 
                     $isotopeOrder->setPaymentMethod($payment);
-                    $isotopeOrder->save();
                 }
+
+                $isotopeOrder->save();
 
                 // Generate checkout form that redirects to the payment provider
                 $checkoutForm = $isotopeOrder->getPaymentMethod()->checkoutForm($isotopeOrder, $this);
@@ -399,9 +400,9 @@ class KlarnaCheckout extends Module
         $paymentMethods = Payment::findBy(['id IN ('.implode(',', $paymentIds).')', "enabled='1'"], null);
         if (null !== $paymentMethods) {
             foreach ($paymentMethods as $paymentMethod) {
-                if (!$paymentMethod->isAvailable()) {
-                    continue;
-                }
+                // NB: We do not check whether the payment method is available as it may differ by the billing address
+                // and we must not alter the payment methods afterwards.
+                // However the allowed countries get transmitted to Klarna.
 
                 $methods[] = $paymentMethod;
             }
