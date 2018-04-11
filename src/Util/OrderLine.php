@@ -366,7 +366,8 @@ final class OrderLine
     {
         $surcharges = $this->collection->getSurcharges();
         foreach ($surcharges as $surcharge) {
-            if (!$surcharge instanceof ProductCollectionSurcharge\Rule || 'subtotal' === $surcharge->applyTo) {
+            if (!$surcharge instanceof ProductCollectionSurcharge\Rule
+                || ($surcharge->type === 'cart' && 'subtotal' === $surcharge->applyTo)) {
                 continue;
             }
 
