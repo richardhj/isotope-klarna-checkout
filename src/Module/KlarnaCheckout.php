@@ -15,7 +15,6 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
 
 
 use Contao\BackendTemplate;
-use Contao\Controller;
 use Contao\CoreBundle\Exception\NoRootPageFoundException;
 use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\CoreBundle\Exception\RedirectResponseException;
@@ -170,7 +169,7 @@ class KlarnaCheckout extends Module
                 $jumpToCart = PageModel::findPublishedById($this->iso_cart_jumpTo);
                 if (null !== $jumpToCart) {
                     $jumpToCart->loadDetails();
-                    Controller::redirect($jumpToCart->getFrontendUrl(null, $jumpToCart->language));
+                    throw new RedirectResponseException($jumpToCart->getFrontendUrl(null, $jumpToCart->language));
                 }
             }
 
@@ -344,7 +343,7 @@ class KlarnaCheckout extends Module
 
                 // Order already completed (see isotope/core#1441)
                 if ($isotopeOrder->checkout_complete) {
-                    Controller::redirect(
+                    throw new RedirectResponseException(
                         $this->uri($this->klarna_confirmation_page).'?uid='.$isotopeOrder->getUniqueId()
                     );
                 }
