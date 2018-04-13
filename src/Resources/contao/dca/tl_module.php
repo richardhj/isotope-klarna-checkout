@@ -12,7 +12,7 @@
  */
 
 $GLOBALS['TL_DCA']['tl_module']['palettes']['iso_klarna_checkout'] = '{title_legend},name,headline,type;'
-                                                                     .'{config_legend},iso_shipping_modules,iso_payment_modules,nc_notification,klarna_show_subtotal_detail;'
+                                                                     .'{config_legend},iso_shipping_modules,iso_payment_modules,nc_notification,iso_addToAddressbook,klarna_show_subtotal_detail;'
                                                                      .'{redirect_legend},iso_cart_jumpTo,klarna_terms_page,klarna_checkout_page,klarna_confirmation_page,klarna_cancellation_page;'
                                                                      .'{customization_legend:hide},klarna_color_button,klarna_color_button_text,klarna_color_checkbox,klarna_color_checkbox_checkmark,klarna_color_header,klarna_color_link;'
                                                                      .'{template_legend},customTpl;'
