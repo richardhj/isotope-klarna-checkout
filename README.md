@@ -44,6 +44,10 @@ Richard Henkenjohann <richardhenkenjohann@googlemail.com>
 
 Please consider monetary support for this extension's author in case this extension is doing business in your eCommerce.
 
+## Demo
+
+![checkout demo](https://raw.githubusercontent.com/richardhj/isotope-klarna-checkout/master/docs/demo-checkout.gif)
+
 ## Contributing
 
 The API documentation is available at <https://developers.klarna.com/api>.
