@@ -1,7 +1,7 @@
 # Klarna Checkout v3 for Isotope eCommerce
 
 [![Latest Version on Packagist][ico-version]][link-packagist]
-[![Software License][ico-license]]()
+[![Software License][ico-license]](LICENSE)
 [![Dependency Status][ico-dependencies]][link-dependencies]
 
 This package provides an entire new checkout for Isotope eCommerce. It integrates the Klarna checkout iFrame into your
