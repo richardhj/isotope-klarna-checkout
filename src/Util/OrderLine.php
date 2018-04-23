@@ -171,7 +171,9 @@ final class OrderLine
         $self = new self();
         $self->setSurcharge($surcharge);
 
-        if ($surcharge instanceof ProductCollectionSurcharge\Rule && 'subtotal' !== $surcharge->applyTo) {
+        if ($surcharge instanceof ProductCollectionSurcharge\Rule
+            && $surcharge->type === 'product'
+            && 'subtotal' !== $surcharge->applyTo) {
             // In case that the rule applies to the product, we need to alter the $total_discount_amount instead
             return null;
         }
