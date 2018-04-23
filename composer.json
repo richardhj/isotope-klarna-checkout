@@ -17,8 +17,13 @@
   "require": {
     "php": "^7.0",
     "contao/core-bundle": "^4.4",
+    "doctrine/dbal": "^2.0",
+    "guzzlehttp/guzzle": "^6.0",
     "isotope/isotope-core": "^2.4",
-    "klarna/kco_rest": "^3.0"
+    "klarna/kco_rest": "^3.0",
+    "symfony/dependency-injection": "^3.3",
+    "symfony/http-foundation": "^3.3",
+    "symfony/routing": "^3.3"
   },
   "autoload": {
     "psr-4": {
