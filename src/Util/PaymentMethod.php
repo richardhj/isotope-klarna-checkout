@@ -82,15 +82,15 @@ final class PaymentMethod
     }
 
     /**
-     * @param IsotopePayment $payment
+     * @param IsotopePayment $paymentMethod
      *
      * @param string         $redirectUrl
      *
      * @return PaymentMethod
      */
-    public static function createForPaymentMethod(IsotopePayment $payment, string $redirectUrl): PaymentMethod
+    public static function createForPaymentMethod(IsotopePayment $paymentMethod, string $redirectUrl): PaymentMethod
     {
-        $payment = new self($payment);
+        $payment = new self($paymentMethod);
 
         $payment->redirect_url = $redirectUrl;
 
