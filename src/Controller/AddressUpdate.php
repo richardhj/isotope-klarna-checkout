@@ -15,10 +15,8 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 
 use Contao\CoreBundle\Exception\PageNotFoundException;
-use Contao\Model;
 use Contao\ModuleModel;
 use Isotope\Isotope;
-use Isotope\Model\Address;
 use Isotope\Model\ProductCollection\Cart;
 use Isotope\Model\Shipping;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
@@ -56,7 +54,6 @@ class AddressUpdate
             throw new PageNotFoundException('Page call not valid.');
         }
 
-        /** @var Cart|Model $cart */
         $this->cart = Cart::findOneBy('klarna_order_id', $orderId);
 
         $billingAddress  = $data->billing_address;
@@ -68,14 +65,12 @@ class AddressUpdate
 
         // Set billing address
         $address = $this->cart->getBillingAddress();
-        $address = $address ?? Address::createForProductCollection($this->cart);
         $address = $this->updateAddressByApiResponse($address, (array)$billingAddress);
 
         $this->cart->setBillingAddress($address);
 
         // Set shipping address
         $address = $this->cart->getShippingAddress();
-        $address = $address ?? Address::createForProductCollection($this->cart);
         $address = $this->updateAddressByApiResponse($address, (array)$shippingAddress);
 
         $this->cart->setShippingAddress($address);

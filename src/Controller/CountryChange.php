@@ -15,14 +15,22 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 
 use Contao\CoreBundle\Exception\PageNotFoundException;
-use Contao\Model;
+use Contao\ModuleModel;
+use Isotope\Isotope;
 use Isotope\Model\ProductCollection\Cart;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetShippingOptionsTrait;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Util\UpdateAddressTrait;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class CountryChange
 {
+
+    use GetOrderLinesTrait;
+    use GetShippingOptionsTrait;
+    use UpdateAddressTrait;
 
     /**
      * Will be called whenever the consumer changes billing address country. Time to update shipping, tax and purchase
@@ -49,9 +57,8 @@ class CountryChange
         $billingAddress = $data->billing_address;
         $billingCountry = $billingAddress->country;
 
-        /** @var Cart|Model $cart */
-        $cart   = Cart::findOneBy('klarna_order_id', $orderId);
-        $config = $cart->getConfig();
+        $this->cart = Cart::findOneBy('klarna_order_id', $orderId);
+        $config     = $this->cart->getConfig();
         if (null === $config) {
             $this->errorResponse();
         }
@@ -60,6 +67,42 @@ class CountryChange
         if (!\in_array($billingCountry, $allowedCountries, true)) {
             $this->errorResponse();
         }
+
+        $billingAddress  = $data->billing_address;
+        $shippingAddress = $data->shipping_address;
+        $checkoutModule  = ModuleModel::findById($this->cart->klarna_checkout_module);
+        if (null === $checkoutModule) {
+            $this->errorResponse();
+        }
+
+        // Set billing address
+        $address = $this->cart->getBillingAddress();
+        $address = $this->updateAddressByApiResponse($address, (array)$billingAddress);
+
+        $this->cart->setBillingAddress($address);
+
+        // Set shipping address
+        $address = $this->cart->getShippingAddress();
+        $address = $this->updateAddressByApiResponse($address, (array)$shippingAddress);
+
+        $this->cart->setShippingAddress($address);
+
+        $this->cart->save();
+
+        // Set cart to prevent errors within the Isotope logic.
+        Isotope::setCart($this->cart);
+
+        // Since we updated the shipping address, now we can fetch the current shipping methods.
+        $shippingOptions = $this->shippingOptions(deserialize($checkoutModule->iso_shipping_modules, true));
+        if ([] === $shippingOptions) {
+            $this->errorResponse();
+        }
+
+        // Update order since shipping method may get updated
+        $data->shipping_options = $shippingOptions;
+        $data->order_amount     = round($this->cart->getTotal() * 100);
+        $data->order_tax_amount = round(($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100);
+        $data->order_lines      = $this->orderLines();
 
         $response = new JsonResponse($data);
         $response->send();
