@@ -29,7 +29,7 @@ First of all you configure Klarna for every shop config in use. Edit the Isotope
 API username and API password.
 
 This extension provides two frontend modules that both have to be implemented in your website:
-1. **Klarna checkout:** Place this module on a page the user follows when he wants to proceed to checkout. Replaces
+1. **Klarna checkout:** Place this module on a page the user follows when s/he wants to proceed to checkout. Replaces
 the native Isotope checkout module.
 2. **Klarna checkout confirmation:** Place this module on a page the user get redirected after the checkout being
 completed. This modules displays a confirmation iFrame (order review) and finishes the order in Isotope.
