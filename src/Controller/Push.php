@@ -33,7 +33,7 @@ class Push
      * @param integer $orderId The checkout order id.
      * @param Request $request The request.
      *
-     * @return void
+     * @return Response
      *
      * @throws PageNotFoundException If klarna order could not be associated with an order in the system.
      * @throws \RuntimeException
@@ -65,7 +65,7 @@ class Push
         if (!$isotopeOrder->isCheckoutComplete()) {
             $klarnaOrder->cancel();
 
-            return;
+            return new Response();
         }
 
         $klarnaOrder->acknowledge();
@@ -75,5 +75,7 @@ class Push
                 'merchant_reference2' => $isotopeOrder->getUniqueId(),
             ]
         );
+
+        return new Response();
     }
 }
