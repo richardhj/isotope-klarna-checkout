@@ -23,7 +23,7 @@
     "klarna/kco_rest": "^3.0",
     "symfony/dependency-injection": "^3.3 || ^4.0",
     "symfony/http-foundation": "^3.3 || ^4.0",
-    "symfony/http-kernel": "^3.3 || ^4.0",
+    "symfony/http-kernel": "^3.3 || ^4.0",
     "symfony/routing": "^3.3 || ^4.0"
   },
   "autoload": {
