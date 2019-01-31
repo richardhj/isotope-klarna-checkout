@@ -1,4 +1,6 @@
 services:
+    _defaults: { public: true }
+
     richardhj.klarna_checkout.controller.push:
         class: Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Push
 
