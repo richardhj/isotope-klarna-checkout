@@ -392,7 +392,7 @@ class KlarnaCheckout extends Module
                 if (false === $isotopeOrder->hasPayment()) {
                     /** @var Payment $payment */
                     $payment           = Payment::findByPk($this->request->query->get('pay'));
-                    $allowedPaymentIds = deserialize($this->iso_payment_modules, true);
+                    $allowedPaymentIds = array_map('\intval', deserialize($this->iso_payment_modules, true));
                     if (null === $payment
                         || false === $payment->isAvailable()
                         || false === \in_array($payment->getId(), $allowedPaymentIds, true)) {
