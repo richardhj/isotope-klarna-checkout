@@ -15,11 +15,11 @@
     "source": "https://github.com/richardhj/isotope-klarna-checkout"
   },
   "require": {
-    "php": "^7.0",
+    "php": "^7.1",
     "contao/core-bundle": "^4.4",
     "doctrine/dbal": "^2.0",
     "guzzlehttp/guzzle": "^6.0",
-    "isotope/isotope-core": "^2.4",
+    "isotope/isotope-core": "^2.6",
     "klarna/kco_rest": "^3.0",
     "symfony/dependency-injection": "^3.3 || ^4.0",
     "symfony/http-foundation": "^3.3 || ^4.0",
@@ -32,10 +32,6 @@
     }
   },
   "extra": {
-    "contao-manager-plugin": "Richardhj\\IsotopeKlarnaCheckoutBundle\\ContaoManager\\Plugin",
-    "branch-alias": {
-      "dev-master": "1.0.x-dev",
-      "dev-contao3": "0.3.x-dev"
-    }
+    "contao-manager-plugin": "Richardhj\\IsotopeKlarnaCheckoutBundle\\ContaoManager\\Plugin"
   }
 }
