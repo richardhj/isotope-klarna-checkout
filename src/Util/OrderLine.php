@@ -16,6 +16,7 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Util;
 
 use Contao\Environment;
 use Contao\Model;
+use Contao\StringUtil;
 use Contao\System;
 use Doctrine\DBAL\Connection;
 use Isotope\Interfaces\IsotopeProduct;
@@ -215,14 +216,26 @@ final class OrderLine
         $this->quantity  = $this->item->quantity;
 
         $this->addTotalDiscountAmountForItem();
-        $this->unit_price   = round($this->item->getPrice() * 100);
-        $this->total_amount = round(($this->item->getTotalPrice() - $this->total_discount_amount / 100) * 100);
+        $this->unit_price   = (int) round($this->item->getPrice() * 100, 0);
+        $this->total_amount = (int) round(($this->item->getTotalPrice() - $this->total_discount_amount / 100) * 100,0);
 
         $this->addTaxRateForItem();
         $this->total_tax_amount = 0;
+        if (0 === $this->tax_rate) {
+            // No distinct tax rate was found, maybe multiple taxes apply, simply calculate the tax_rate
+            $taxFreePrice = (int) round($this->item->getTaxFreePrice() * 100, 0);
+            $price        = (int) round($this->item->getPrice() * 100, 0);
+
+            if ($taxFreePrice > 0) {
+                $taxRate = ($price - $taxFreePrice) / $taxFreePrice;
+
+                $this->tax_rate = (int) round($taxRate * 100, 0);
+            }
+        }
+
         if (0 !== $this->tax_rate) {
             $this->total_tax_amount =
-                round($this->total_amount - $this->total_amount * 10000 / (10000 + $this->tax_rate));
+                (int) round($this->total_amount - $this->total_amount * 10000 / (10000 + $this->tax_rate), 0);
         }
 
         $this->addTypeForItem();
@@ -238,13 +251,13 @@ final class OrderLine
         $this->reference    = $this->surcharge->id;
         $this->name         = $this->surcharge->label;
         $this->quantity     = 1;
-        $this->unit_price   = round($this->surcharge->total_price * 100);
-        $this->total_amount = round($this->surcharge->total_price * 100);
+        $this->unit_price   = (int) round($this->surcharge->total_price * 100, 0);
+        $this->total_amount = (int) round($this->surcharge->total_price * 100, 0);
 
         if ($this->surcharge->hasTax()) {
             $this->total_tax_amount =
-                round(($this->surcharge->total_price - $this->surcharge->tax_free_total_price) * 100);
-            $this->tax_rate         = round(($this->total_tax_amount / $this->total_amount) * 1000);
+                (int) round(($this->surcharge->total_price - $this->surcharge->tax_free_total_price) * 100, 0);
+            $this->tax_rate         = (int)round(($this->total_tax_amount / $this->total_amount) * 1000, 0);
         } else {
             $this->tax_rate         = 0;
             $this->total_tax_amount = 0;
@@ -335,36 +348,48 @@ final class OrderLine
     /**
      * Add tax_rate.
      */
-    private function addTaxRateForItem()
+    private function addTaxRateForItem(): void
     {
         $this->tax_rate = 0;
 
         try {
-            $query = $this->connection->createQueryBuilder()
-                ->select('r.rate')
-                ->from('tl_iso_tax_rate', 'r')
-                ->leftJoin('r', 'tl_iso_tax_class', 'c', 'c.includes=r.id')
-                ->where('c.id=:tax_id')
+            $taxRate = $this->connection->createQueryBuilder()
+                ->select('tax_rate.rate')
+                ->from('tl_iso_tax_rate', 'tax_rate')
+                ->innerJoin('rate', 'tl_iso_tax_class', 'tax_class', 'tax_class.includes = tax_rate.id')
+                ->where('tax_class.id = :tax_id')
                 ->setParameter('tax_id', $this->item->tax_id)
-                ->execute();
+                ->execute()
+                ->fetchColumn();
 
-            $taxRate = $query->fetch(\PDO::FETCH_OBJ);
-            if (null === $taxRate) {
+            if (false === $taxRate) {
+                $taxRate = $this->connection->createQueryBuilder()
+                    ->select('tax_rate.rate')
+                    ->from('tl_iso_product_price', 'price')
+                    ->innerJoin('price', 'tl_iso_tax_class', 'tax_class', 'price.tax_class = tax_class.id')
+                    ->innerJoin('tax_class', 'tl_iso_tax_rate', 'tax_rate', 'tax_class.includes = tax_rate.id')
+                    ->where('product.id = :product_id')
+                    ->setParameter('product_id', $this->item->product_id)
+                    ->execute()
+                    ->fetchColumn();
+            }
+
+            if (false === $taxRate) {
                 return;
             }
 
-            $rate = deserialize($taxRate->rate, true);
+            $rate = StringUtil::deserialize($taxRate, true);
 
-            $this->tax_rate = round($rate['value'] * 100);
+            $this->tax_rate = (int) round($rate['value'] * 100, 0);
         } catch (\Exception $e) {
-            // :-/
+            System::log($e->getMessage(), __METHOD__, TL_ERROR);
         }
     }
 
     /**
      * Add total_discount_amount by walking through the surcharges.
      */
-    private function addTotalDiscountAmountForItem()
+    private function addTotalDiscountAmountForItem(): void
     {
         foreach ((array)$this->collection->getSurcharges() as $surcharge) {
             if (!$surcharge instanceof ProductCollectionSurcharge\Rule
@@ -376,6 +401,6 @@ final class OrderLine
             $this->total_discount_amount += ($surcharge->getAmountForCollectionItem($this->item) * (-1));
         }
 
-        $this->total_discount_amount = round($this->total_discount_amount * 100);
+        $this->total_discount_amount = (int)round($this->total_discount_amount * 100, 0);
     }
 }
