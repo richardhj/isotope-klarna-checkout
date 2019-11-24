@@ -24,6 +24,7 @@ use Contao\Model;
 use Contao\Module;
 use Contao\ModuleModel;
 use Contao\PageModel;
+use Contao\StringUtil;
 use Contao\System;
 use GuzzleHttp\Exception\RequestException;
 use Haste\Input\Input;
@@ -184,9 +185,9 @@ class KlarnaCheckout extends Module
             try {
                 $klarnaCheckout->update(
                     [
-                        'order_amount'     => round($this->cart->getTotal() * 100),
-                        'order_tax_amount' => round(
-                            ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100
+                        'order_amount'     => (int)round($this->cart->getTotal() * 100, 0),
+                        'order_tax_amount' => (int) round(
+                            ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100, 0
                         ),
                         'order_lines'      => $this->orderLines(),
                     ]
@@ -219,9 +220,9 @@ class KlarnaCheckout extends Module
                         'purchase_country'         => $this->config->country,
                         'purchase_currency'        => $this->config->currency,
                         'locale'                   => $this->request->getLocale(),
-                        'order_amount'             => round($this->cart->getTotal() * 100),
-                        'order_tax_amount'         => round(
-                            ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100
+                        'order_amount'             => (int)round($this->cart->getTotal() * 100, 0),
+                        'order_tax_amount'         => (int)round(
+                            ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100, 0
                         ),
                         'order_lines'              => $this->orderLines(),
                         'merchant_urls'            => [
@@ -266,7 +267,7 @@ class KlarnaCheckout extends Module
                         'billing_address'          => $billingAddress,
                         'shipping_address'         => $shippingAddress,
                         'shipping_options'         => $this->shippingOptions(
-                            deserialize($this->iso_shipping_modules, true)
+                            StringUtil::deserialize($this->iso_shipping_modules, true)
                         ),
                         'shipping_countries'       => $this->config->getShippingCountries(),
                         'external_payment_methods' => $this->externalPaymentMethods(),

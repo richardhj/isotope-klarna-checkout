@@ -15,6 +15,7 @@ namespace Richardhj\IsotopeKlarnaCheckoutBundle\Util;
 
 
 use Contao\Model;
+use Contao\StringUtil;
 use Isotope\Interfaces\IsotopePayment;
 use Isotope\Model\Payment;
 
@@ -100,13 +101,13 @@ final class PaymentMethod
     /**
      * Fill properties by given payment method model.
      */
-    private function processPaymentMethod()
+    private function processPaymentMethod(): void
     {
         $this->name        = $this->payment->name;
-        $this->fee         = round($this->payment->getPrice() * 100);
+        $this->fee         = (int) round($this->payment->getPrice() * 100, 0);
         $this->description = $this->payment->note;
 
-        $countries = deserialize($this->payment->countries, true);
+        $countries = StringUtil::deserialize($this->payment->countries, true);
         if ([] !== $countries) {
             $this->countries = $countries;
         }

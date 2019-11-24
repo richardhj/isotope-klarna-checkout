@@ -111,7 +111,7 @@ final class ShippingOption
         $this->id              = $this->shipping->getId();
         $this->name            = $this->shipping->getLabel();
         $this->description     = strip_tags($this->shipping->getNote());
-        $this->price           = round($this->shipping->getPrice() * 100);
+        $this->price           = (int) round($this->shipping->getPrice() * 100, 0);
         $this->shipping_method = $this->shipping->klarna_shipping_method ?: self::METHOD_OWN;
 
         if (0 !== $this->price && $this->shipping->isPercentage()) {
@@ -140,7 +140,7 @@ final class ShippingOption
             $includes = $taxClass->getRelated('includes');
             $rate     = StringUtil::deserialize($includes->rate, true);
 
-            $this->tax_rate   = round($rate['value'] * 100);
+            $this->tax_rate   = (int) round($rate['value'] * 100, 0);
             $this->tax_amount = $includes->calculateAmountIncludedInPrice($this->price);
         } catch (\Exception $e) {
             // :-/
