@@ -356,7 +356,7 @@ final class OrderLine
             $taxRate = $this->connection->createQueryBuilder()
                 ->select('tax_rate.rate')
                 ->from('tl_iso_tax_rate', 'tax_rate')
-                ->innerJoin('rate', 'tl_iso_tax_class', 'tax_class', 'tax_class.includes = tax_rate.id')
+                ->innerJoin('tax_rate', 'tl_iso_tax_class', 'tax_class', 'tax_class.includes = tax_rate.id')
                 ->where('tax_class.id = :tax_id')
                 ->setParameter('tax_id', $this->item->tax_id)
                 ->execute()
