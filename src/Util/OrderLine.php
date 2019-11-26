@@ -368,7 +368,7 @@ final class OrderLine
                     ->from('tl_iso_product_price', 'price')
                     ->innerJoin('price', 'tl_iso_tax_class', 'tax_class', 'price.tax_class = tax_class.id')
                     ->innerJoin('tax_class', 'tl_iso_tax_rate', 'tax_rate', 'tax_class.includes = tax_rate.id')
-                    ->where('product.id = :product_id')
+                    ->where('price.pid = :product_id')
                     ->setParameter('product_id', $this->item->product_id)
                     ->execute()
                     ->fetchColumn();
