@@ -34,8 +34,6 @@ use Klarna\Rest\Transport\Connector as KlarnaConnector;
 use Klarna\Rest\Transport\ConnectorInterface;
 use Klarna\Rest\Transport\Exception\ConnectorException;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\UpdateAddressTrait;
-use Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException;
-use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\HttpFoundation\Request;
 
 class KlarnaCheckoutConfirmation extends Module
@@ -89,7 +87,7 @@ class KlarnaCheckoutConfirmation extends Module
                     'title'    => $this->headline,
                     'id'       => $this->id,
                     'link'     => $this->name,
-                    'href'     => 'contao/main.php?do=themes&amp;table=tl_module&amp;act=edit&amp;id='.$this->id,
+                    'href'     => 'contao/main?do=themes&amp;table=tl_module&amp;act=edit&amp;id='.$this->id,
                 ]
             );
 
@@ -112,8 +110,6 @@ class KlarnaCheckoutConfirmation extends Module
      * @throws ConnectorException        When the API replies with an error response
      * @throws \InvalidArgumentException If the JSON cannot be parsed
      * @throws \LogicException           If Klarna not configured in Isotope config.
-     * @throws ServiceNotFoundException
-     * @throws ServiceCircularReferenceException
      */
     protected function compile()
     {
@@ -178,16 +174,14 @@ class KlarnaCheckoutConfirmation extends Module
         $shippingAddress = $klarnaCheckout['shipping_address'];
 
         // Update billing address
-        $address = $isotopeOrder->getBillingAddress();
-        $address = $address ?? Address::createForProductCollection($isotopeOrder);
+        $address = $isotopeOrder->getBillingAddress() ?? Address::createForProductCollection($isotopeOrder);
         $address = $this->updateAddressByApiResponse($address, $billingAddress);
 
         $isotopeOrder->setBillingAddress($address);
 
         // Update shipping address
         if ($shippingAddress !== $billingAddress) {
-            $address = $isotopeOrder->getShippingAddress();
-            $address = $address ?? Address::createForProductCollection($isotopeOrder);
+            $address = $isotopeOrder->getShippingAddress() ?? Address::createForProductCollection($isotopeOrder);
             $address = $this->updateAddressByApiResponse($address, $shippingAddress);
         }
         $isotopeOrder->setShippingAddress($address);
