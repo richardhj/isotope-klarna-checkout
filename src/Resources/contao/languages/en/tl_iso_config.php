@@ -22,5 +22,5 @@ $GLOBALS['TL_LANG']['tl_iso_config']['klarna_api_password'][0] = 'Klarna API pas
 $GLOBALS['TL_LANG']['tl_iso_config']['klarna_api_password'][1] = 'Enter the API password that you can generate within the Klarna merchant portal.';
 $GLOBALS['TL_LANG']['tl_iso_config']['klarna_api_test'][0]     = 'Test mode';
 $GLOBALS['TL_LANG']['tl_iso_config']['klarna_api_test'][1]     = 'Tick the box to use the Klarna API-playground endpoint.';
-$GLOBALS['TL_LANG']['tl_iso_config']['klarna_api_test'][0]     = 'Debug';
-$GLOBALS['TL_LANG']['tl_iso_config']['klarna_api_test'][1]     = 'Log the data that is sent to Klarna to allow debugging.';
+$GLOBALS['TL_LANG']['tl_iso_config']['klarna_debug'][0]        = 'Debug';
+$GLOBALS['TL_LANG']['tl_iso_config']['klarna_debug'][1]        = 'Log the data that is sent to Klarna to allow debugging.';
