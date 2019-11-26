@@ -108,11 +108,11 @@ class KlarnaCheckout extends Module
             $template = new BackendTemplate('be_wildcard');
             $template->setData(
                 [
-                    'wildcard' => '### '.strtoupper($GLOBALS['TL_LANG']['FMD'][$this->type][0]).' ###',
+                    'wildcard' => '### ' . strtoupper($GLOBALS['TL_LANG']['FMD'][$this->type][0]) . ' ###',
                     'title'    => $this->headline,
                     'id'       => $this->id,
                     'link'     => $this->name,
-                    'href'     => 'contao/main.php?do=themes&amp;table=tl_module&amp;act=edit&amp;id='.$this->id,
+                    'href'     => 'contao/main.php?do=themes&amp;table=tl_module&amp;act=edit&amp;id=' . $this->id,
                 ]
             );
 
@@ -184,12 +184,13 @@ class KlarnaCheckout extends Module
             $klarnaCheckout = new KlarnaOrder($connector, $klarnaOrderId);
             try {
                 $data = [
-                        'order_amount'     => (int)round($this->cart->getTotal() * 100, 0),
-                        'order_tax_amount' => (int) round(
-                            ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100, 0
-                        ),
-                        'order_lines'      => $this->orderLines(),
-                    ];
+                    'order_amount'     => (int) round($this->cart->getTotal() * 100, 0),
+                    'order_tax_amount' => (int) round(
+                        ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
+                        0
+                    ),
+                    'order_lines'      => $this->orderLines(),
+                ];
 
                 if ($this->config->klarna_debug) {
                     log_message(
@@ -225,16 +226,18 @@ class KlarnaCheckout extends Module
                     'purchase_country'         => $this->config->country,
                     'purchase_currency'        => $this->config->currency,
                     'locale'                   => $this->request->getLocale(),
-                    'order_amount'             => (int)round($this->cart->getTotal() * 100, 0),
-                    'order_tax_amount'         => (int)round(
-                        ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100, 0
+                    'order_amount'             => (int) round($this->cart->getTotal() * 100, 0),
+                    'order_tax_amount'         => (int) round(
+                        ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
+                        0
                     ),
                     'order_lines'              => $this->orderLines(),
                     'merchant_urls'            => [
                         'terms'                  => $this->uri($this->klarna_terms_page),
+                        'cancellation_terms'     => $this->uri($this->klarna_cancellation_terms_page),
                         'checkout'               => $this->uri($this->klarna_checkout_page),
                         'confirmation'           => $this->uri($this->klarna_confirmation_page)
-                                                    .'?klarna_order_id={checkout.order.id}',
+                                                    . '?klarna_order_id={checkout.order.id}',
                         'push'                   => urldecode(
                             System::getContainer()->get('router')->generate(
                                 'richardhj.klarna_checkout.push',
@@ -279,25 +282,25 @@ class KlarnaCheckout extends Module
                     'options'                  => [
                         'allow_separate_shipping_address'   => [] !== $this->config->getShippingFields(),
                         'color_button'                      => $this->klarna_color_button
-                            ? '#'.$this->klarna_color_button
+                            ? '#' . $this->klarna_color_button
                             : null,
                         'color_button_text'                 => $this->klarna_color_button_text
-                            ? '#'.$this->klarna_color_button_text
+                            ? '#' . $this->klarna_color_button_text
                             : null,
                         'color_checkbox'                    => $this->klarna_color_checkbox
-                            ? '#'.$this->klarna_color_checkbox
+                            ? '#' . $this->klarna_color_checkbox
                             : null,
                         'color_checkbox_checkmark'          => $this->klarna_color_checkbox_checkmark
-                            ? '#'.$this->klarna_color_checkbox_checkmark
+                            ? '#' . $this->klarna_color_checkbox_checkmark
                             : null,
                         'color_header'                      => $this->klarna_color_header
-                            ? '#'.$this->klarna_color_header
+                            ? '#' . $this->klarna_color_header
                             : null,
                         'color_link'                        => $this->klarna_color_link
-                            ? '#'.$this->klarna_color_link
+                            ? '#' . $this->klarna_color_link
                             : null,
                         'require_validate_callback_success' => true,
-                        'show_subtotal_detail'              => (bool)$this->klarna_show_subtotal_detail,
+                        'show_subtotal_detail'              => (bool) $this->klarna_show_subtotal_detail,
                     ],
                     'merchant_data'            => http_build_query(['member' => $this->user->id ?? null]),
                 ];
@@ -347,7 +350,7 @@ class KlarnaCheckout extends Module
                 if (null === ($isotopeOrder = Order::findOneBy('uniqid', $this->request->query->get('uid')))) {
                     if ($this->cart->isEmpty()) {
                         throw new PageNotFoundException(
-                            'Order with unique id not found: '.$this->request->query->get('uid')
+                            'Order with unique id not found: ' . $this->request->query->get('uid')
                         );
                     }
 
@@ -359,7 +362,7 @@ class KlarnaCheckout extends Module
                 // Order already completed (see isotope/core#1441)
                 if ($isotopeOrder->checkout_complete) {
                     throw new RedirectResponseException(
-                        $this->uri($this->klarna_confirmation_page).'?uid='.$isotopeOrder->getUniqueId()
+                        $this->uri($this->klarna_confirmation_page) . '?uid=' . $isotopeOrder->getUniqueId()
                     );
                 }
 
@@ -373,7 +376,7 @@ class KlarnaCheckout extends Module
                     // If checkout is successful, complete order and redirect to confirmation page
                     if ($isotopeOrder->checkout() && $isotopeOrder->complete()) {
                         throw new RedirectResponseException(
-                            $this->uri($this->klarna_confirmation_page).'?uid='.$isotopeOrder->getUniqueId()
+                            $this->uri($this->klarna_confirmation_page) . '?uid=' . $isotopeOrder->getUniqueId()
                         );
                     }
 
@@ -425,7 +428,7 @@ class KlarnaCheckout extends Module
                 $checkoutForm = $isotopeOrder->getPaymentMethod()->checkoutForm($isotopeOrder, $this);
                 if (false === $checkoutForm) {
                     throw new RedirectResponseException(
-                        '/'.NativeCheckout::generateUrlForStep(NativeCheckout::STEP_COMPLETE, $isotopeOrder)
+                        '/' . NativeCheckout::generateUrlForStep(NativeCheckout::STEP_COMPLETE, $isotopeOrder)
                     );
                 }
 
@@ -447,7 +450,7 @@ class KlarnaCheckout extends Module
 
         $methods = [];
         /** @var Payment[] $paymentMethods */
-        $paymentMethods = Payment::findBy(['id IN ('.implode(',', $paymentIds).')', "enabled='1'"], null);
+        $paymentMethods = Payment::findBy(['id IN (' . implode(',', $paymentIds) . ')', "enabled='1'"], null);
         if (null !== $paymentMethods) {
             foreach ($paymentMethods as $paymentMethod) {
                 // NB: We do not check whether the payment method is available as it may differ by the billing address
@@ -463,9 +466,9 @@ class KlarnaCheckout extends Module
                 return get_object_vars(
                     PaymentMethod::createForPaymentMethod(
                         $payment,
-                        $this->request->getSchemeAndHttpHost().'/'
-                        .NativeCheckout::generateUrlForStep(NativeCheckout::STEP_PROCESS)
-                        .'?pay='.$payment->getId()
+                        $this->request->getSchemeAndHttpHost() . '/'
+                        . NativeCheckout::generateUrlForStep(NativeCheckout::STEP_PROCESS)
+                        . '?pay=' . $payment->getId()
                     )
                 );
             },
@@ -487,7 +490,7 @@ class KlarnaCheckout extends Module
             return null;
         }
 
-        return Environment::get('url').'/'.$page->getFrontendUrl();
+        return Environment::get('url') . '/' . $page->getFrontendUrl();
     }
 
     /**
@@ -499,12 +502,12 @@ class KlarnaCheckout extends Module
     {
         $response = $e->getResponse();
 
-        $this->Template->gui = $GLOBALS['TL_LANG']['XPT']['error'].'<br>';
-        $this->Template->gui .= 'Current time: '.date('Y-m-d H:i:s').'<br>';
+        $this->Template->gui = $GLOBALS['TL_LANG']['XPT']['error'] . '<br>';
+        $this->Template->gui .= 'Current time: ' . date('Y-m-d H:i:s') . '<br>';
         if ($response !== null) {
-            $this->Template->gui .= 'Error code: '.$response->getReasonPhrase();
+            $this->Template->gui .= 'Error code: ' . $response->getReasonPhrase();
         }
 
-        System::log('KCO error: '.strip_tags($e->getMessage()), __METHOD__, TL_ERROR);
+        System::log('KCO error: ' . strip_tags($e->getMessage()), __METHOD__, TL_ERROR);
     }
 }

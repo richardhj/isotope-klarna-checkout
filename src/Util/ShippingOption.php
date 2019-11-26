@@ -24,12 +24,15 @@ use Isotope\Model\TaxRate;
 final class ShippingOption
 {
 
-    const METHOD_PICK_UP_STORE = 'PickUpStore';
-    const METHOD_HOME          = 'Home';
-    const METHOD_BOX_REG       = 'BoxReg';
-    const METHOD_BOX_UNREG     = 'BoxUnreg';
-    const METHOD_PICK_UP_POINT = 'PickUpPoint';
-    const METHOD_OWN           = 'Own';
+    const METHOD_PICK_UP_STORE   = 'PickUpStore';
+    const METHOD_HOME            = 'Home';
+    const METHOD_BOX_REG         = 'BoxReg';
+    const METHOD_BOX_UNREG       = 'BoxUnreg';
+    const METHOD_PICK_UP_POINT   = 'PickUpPoint';
+    const METHOD_OWN             = 'Own';
+    const METHOD_POSTAL          = 'Postal';
+    const METHOD_DHL_PACKSTATION = 'DHLPackstation';
+    const METHOD_DIGITAL         = 'Digital';
 
     /**
      * @var IsotopeShipping|Shipping|Model
@@ -115,7 +118,7 @@ final class ShippingOption
         $this->shipping_method = $this->shipping->klarna_shipping_method ?: self::METHOD_OWN;
 
         if (0 !== $this->price && $this->shipping->isPercentage()) {
-            $this->name .= ' ('.$this->shipping->getPercentageLabel().')';
+            $this->name .= ' (' . $this->shipping->getPercentageLabel() . ')';
         }
 
         $this->addTaxData();

@@ -26,6 +26,9 @@ $GLOBALS['TL_DCA']['tl_iso_shipping']['fields']['klarna_shipping_method'] = [
         ShippingOption::METHOD_BOX_REG,
         ShippingOption::METHOD_BOX_UNREG,
         ShippingOption::METHOD_PICK_UP_POINT,
+        ShippingOption::METHOD_POSTAL,
+        ShippingOption::METHOD_DHL_PACKSTATION,
+        ShippingOption::METHOD_DIGITAL,
     ],
     'reference' => &$GLOBALS['TL_LANG']['tl_iso_shipping']['klarna_shipping_methods'],
     'eval'      => [
