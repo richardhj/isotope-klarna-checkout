@@ -13,8 +13,6 @@
 
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
-
-use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\System;
 use Isotope\Isotope;
 use Isotope\Model\ProductCollection\Cart as IsotopeCart;
@@ -33,75 +31,64 @@ class OrderValidation
      * Will be called before completing the purchase to validate the information provided by the consumer in Klarna's
      * Checkout iframe.
      * The response will redirect to an error page if the preCheckout hook will fail.
-     *
-     * @param Request $request The request.
-     *
-     * @return void
-     *
-     * @throws PageNotFoundException If page is requested without data.
-     * @throws \LogicException
-     * @throws \RuntimeException
-     * @throws \InvalidArgumentException
      */
-    public function __invoke(Request $request)
+    public function __invoke(Request $request): Response
     {
         $data = json_decode($request->getContent());
         if (null === $data) {
-            throw new PageNotFoundException('Page call not valid.');
-        }
-
-        $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $data->order_id);
-        if (null !== $isotopeOrder) {
-            if (!$isotopeOrder->isLocked()) {
-                $isotopeOrder->lock();
-            }
-
-            $response = new JsonResponse($data);
-            $response->send();
-            exit;
+            return new Response('Bad Request', Response::HTTP_BAD_REQUEST);
         }
 
         $this->cart = IsotopeCart::findOneBy('klarna_order_id', $data->order_id);
         Isotope::setCart($this->cart);
 
+        $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $data->order_id);
+        if (null !== $isotopeOrder) {
+            if (!$isotopeOrder->isLocked()) {
+                try {
+                    $isotopeOrder->lock();
+                } catch (\Throwable $e) {
+                    return new Response('Error locking order', Response::HTTP_INTERNAL_SERVER_ERROR);
+                }
+            }
+
+            return new JsonResponse($data);
+        }
+
+
         // Create order
-        $isotopeOrder                  = $this->cart->getDraftOrder();
+        $isotopeOrder = $this->cart->getDraftOrder();
+
         $isotopeOrder->klarna_order_id = $data->order_id;
 
         if (false === $this->checkPreCheckoutHook($isotopeOrder) || false === $this->canCheckout()) {
-            $response = new JsonResponse(
+            return new JsonResponse(
                 [
                     'error_type' => 'address_error',
                     //'error_text' => $this->translator->trans('ERR.orderFailed', null, $data->locale),
                     'error_text' => $GLOBALS['TL_LANG']['ERR']['orderFailed'],
-                ]
+                ], Response::HTTP_BAD_REQUEST
             );
-            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-            $response->send();
-            exit;
         }
 
         $isotopeOrder->lock();
 
-        $response = new JsonResponse($data);
-        $response->send();
+        return new JsonResponse($data);
     }
 
     /**
      * Call the pre checkout hook.
      * As of the default logic, a `false` return value requires to cancel the order.
-     *
-     * @param IsotopeOrder $order
-     *
-     * @return bool
      */
     private function checkPreCheckoutHook(IsotopeOrder $order): bool
     {
         if (isset($GLOBALS['ISO_HOOKS']['preCheckout']) && \is_array($GLOBALS['ISO_HOOKS']['preCheckout'])) {
             foreach ($GLOBALS['ISO_HOOKS']['preCheckout'] as $callback) {
                 try {
-                    return System::importStatic($callback[0])->{$callback[1]}($order, $this);
-                } catch (\Exception $e) {
+                    if (false === System::importStatic($callback[0])->{$callback[1]}($order, $this)) {
+                        return false;
+                    }
+                } catch (\Throwable $e) {
                     // The callback most probably required $this to be an instance of \Isotope\Module\Checkout.
                     // Nothing we can do about it here.
                 }
