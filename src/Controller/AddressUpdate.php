@@ -13,9 +13,9 @@
 
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
-
 use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\ModuleModel;
+use Contao\StringUtil;
 use Isotope\Isotope;
 use Isotope\Model\ProductCollection\Cart;
 use Isotope\Model\Shipping;
@@ -36,22 +36,12 @@ class AddressUpdate
     /**
      * Will be called whenever the consumer changes billing or shipping address.
      * The response contains the updated shipping options.
-     *
-     * @param integer $orderId The checkout order id.
-     * @param Request $request The request.
-     *
-     * @return void
-     *
-     * @throws PageNotFoundException If page is requested without data.
-     * @throws \LogicException
-     * @throws \RuntimeException
-     * @throws \InvalidArgumentException
      */
-    public function __invoke($orderId, Request $request)
+    public function __invoke($orderId, Request $request): Response
     {
         $data = json_decode($request->getContent());
         if (null === $data) {
-            throw new PageNotFoundException('Page call not valid.');
+            return new Response('Bad Request', Response::HTTP_BAD_REQUEST);
         }
 
         $this->cart = Cart::findOneBy('klarna_order_id', $orderId);
@@ -60,7 +50,7 @@ class AddressUpdate
         $shippingAddress = $data->shipping_address;
         $checkoutModule  = ModuleModel::findById($this->cart->klarna_checkout_module);
         if (null === $checkoutModule) {
-            $this->errorResponse();
+            return new JsonResponse(['error_type' => 'unsupported_shipping_address'], Response::HTTP_BAD_REQUEST);
         }
 
         // Set billing address
@@ -86,33 +76,17 @@ class AddressUpdate
         Isotope::setCart($this->cart);
 
         // Since we updated the shipping address, now we can fetch the current shipping methods.
-        $shippingOptions = $this->shippingOptions(deserialize($checkoutModule->iso_shipping_modules, true));
+        $shippingOptions = $this->shippingOptions(StringUtil::deserialize($checkoutModule->iso_shipping_modules, true));
         if ([] === $shippingOptions) {
-            $this->errorResponse();
+            return new JsonResponse(['error_type' => 'unsupported_shipping_address'], Response::HTTP_BAD_REQUEST);
         }
 
         // Update order since shipping method may get updated
         $data->shipping_options = $shippingOptions;
-        $data->order_amount     = round($this->cart->getTotal() * 100);
-        $data->order_tax_amount = round(($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100);
+        $data->order_amount     = (int) round($this->cart->getTotal() * 100, 0);
+        $data->order_tax_amount = (int) round(($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100, 0);
         $data->order_lines      = $this->orderLines();
 
-        $response = new JsonResponse($data);
-        $response->send();
-    }
-
-    /**
-     * Send a response that will display an error to the customer.
-     *
-     * @return void
-     *
-     * @throws \InvalidArgumentException
-     */
-    private function errorResponse()
-    {
-        $response = new JsonResponse(['error_type' => 'unsupported_shipping_address']);
-        $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-        $response->send();
-        exit;
+        return new JsonResponse($data);
     }
 }

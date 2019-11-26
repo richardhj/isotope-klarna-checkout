@@ -22,6 +22,7 @@ use Isotope\Model\Shipping;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class ShippingOptionUpdate
 {
@@ -31,22 +32,12 @@ class ShippingOptionUpdate
     /**
      * Will be called whenever the consumer selects a shipping option.
      * The response will contain the updated order_lines due of added shipping_fee.
-     *
-     * @param integer $orderId The checkout order id.
-     * @param Request $request The request.
-     *
-     * @return void
-     *
-     * @throws PageNotFoundException If page is requested without data.
-     * @throws \LogicException
-     * @throws \RuntimeException
-     * @throws \InvalidArgumentException
      */
-    public function __invoke($orderId, Request $request)
+    public function __invoke($orderId, Request $request): Response
     {
         $data = json_decode($request->getContent());
         if (null === $data) {
-            throw new PageNotFoundException('Page call not valid.');
+            return new Response('Bad Request', Response::HTTP_BAD_REQUEST);
         }
 
         /** @var Cart|Model $cart */
@@ -64,7 +55,6 @@ class ShippingOptionUpdate
         $data->order_tax_amount = ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100;
         $data->order_lines      = $this->orderLines();
 
-        $response = new JsonResponse($data);
-        $response->send();
+        return new JsonResponse($data);
     }
 }
