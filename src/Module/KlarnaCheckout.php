@@ -478,12 +478,8 @@ class KlarnaCheckout extends Module
 
     /**
      * Absolute uri of given page id.
-     *
-     * @param int $pageId
-     *
-     * @return string
      */
-    private function uri(int $pageId): string
+    private function uri(int $pageId): ?string
     {
         $page = PageModel::findById($pageId);
         if (null === $page) {
