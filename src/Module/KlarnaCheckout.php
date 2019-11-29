@@ -183,23 +183,16 @@ class KlarnaCheckout extends Module
             // Resume, just make sure the cart is up to date
             $klarnaCheckout = new KlarnaOrder($connector, $klarnaOrderId);
             try {
-                $data = [
+                $klarnaCheckout->update(
+                    [
                     'order_amount'     => (int) round($this->cart->getTotal() * 100, 0),
                     'order_tax_amount' => (int) round(
                         ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
                         0
                     ),
                     'order_lines'      => $this->orderLines(),
-                ];
-
-                if ($this->config->klarna_debug) {
-                    log_message(
-                        sprintf("New Klarna update request:\n\n%s\n", var_export($data, true)),
-                        'klarna_api.log'
-                    );
-                }
-
-                $klarnaCheckout->update($data);
+                ]
+                );
             } catch (RequestException $e) {
                 $klarnaCheckout = null;
             } catch (ConnectorException $e) {
@@ -222,98 +215,91 @@ class KlarnaCheckout extends Module
                     }
                 }
 
-                $data = [
-                    'purchase_country'         => $this->config->country,
-                    'purchase_currency'        => $this->config->currency,
-                    'locale'                   => $this->request->getLocale(),
-                    'order_amount'             => (int) round($this->cart->getTotal() * 100, 0),
-                    'order_tax_amount'         => (int) round(
-                        ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
-                        0
-                    ),
-                    'order_lines'              => $this->orderLines(),
-                    'merchant_urls'            => [
-                        'terms'                  => $this->uri($this->klarna_terms_page),
-                        'cancellation_terms'     => $this->uri($this->klarna_cancellation_terms_page),
-                        'checkout'               => $this->uri($this->klarna_checkout_page),
-                        'confirmation'           => $this->uri($this->klarna_confirmation_page)
-                                                    . '?klarna_order_id={checkout.order.id}',
-                        'push'                   => urldecode(
-                            System::getContainer()->get('router')->generate(
-                                'richardhj.klarna_checkout.push',
-                                ['orderId' => '{checkout.order.id}'],
-                                UrlGeneratorInterface::ABSOLUTE_URL
-                            )
-                        ),
-                        'shipping_option_update' => urldecode(
-                            System::getContainer()->get('router')->generate(
-                                'richardhj.klarna_checkout.callback.shipping_option_update',
-                                ['orderId' => '{checkout.order.id}'],
-                                UrlGeneratorInterface::ABSOLUTE_URL
-                            )
-                        ),
-                        'address_update'         => urldecode(
-                            System::getContainer()->get('router')->generate(
-                                'richardhj.klarna_checkout.callback.address_update',
-                                ['orderId' => '{checkout.order.id}'],
-                                UrlGeneratorInterface::ABSOLUTE_URL
-                            )
-                        ),
-                        'country_change'         => urldecode(
-                            System::getContainer()->get('router')->generate(
-                                'richardhj.klarna_checkout.callback.country_change',
-                                ['orderId' => '{checkout.order.id}'],
-                                UrlGeneratorInterface::ABSOLUTE_URL
-                            )
-                        ),
-                        'validation'             => System::getContainer()->get('router')->generate(
-                            'richardhj.klarna_checkout.callback.order_validation',
-                            [],
-                            UrlGeneratorInterface::ABSOLUTE_URL
-                        ),
-                    ],
-                    'billing_address'          => $billingAddress,
-                    'shipping_address'         => $shippingAddress,
-                    'shipping_options'         => $this->shippingOptions(
-                        StringUtil::deserialize($this->iso_shipping_modules, true)
-                    ),
-                    'shipping_countries'       => $this->config->getShippingCountries(),
-                    'external_payment_methods' => $this->externalPaymentMethods(),
-                    'options'                  => [
-                        'allow_separate_shipping_address'   => [] !== $this->config->getShippingFields(),
-                        'color_button'                      => $this->klarna_color_button
-                            ? '#' . $this->klarna_color_button
-                            : null,
-                        'color_button_text'                 => $this->klarna_color_button_text
-                            ? '#' . $this->klarna_color_button_text
-                            : null,
-                        'color_checkbox'                    => $this->klarna_color_checkbox
-                            ? '#' . $this->klarna_color_checkbox
-                            : null,
-                        'color_checkbox_checkmark'          => $this->klarna_color_checkbox_checkmark
-                            ? '#' . $this->klarna_color_checkbox_checkmark
-                            : null,
-                        'color_header'                      => $this->klarna_color_header
-                            ? '#' . $this->klarna_color_header
-                            : null,
-                        'color_link'                        => $this->klarna_color_link
-                            ? '#' . $this->klarna_color_link
-                            : null,
-                        'require_validate_callback_success' => true,
-                        'show_subtotal_detail'              => (bool) $this->klarna_show_subtotal_detail,
-                    ],
-                    'merchant_data'            => http_build_query(['member' => $this->user->id ?? null]),
-                ];
-
-                if ($this->config->klarna_debug) {
-                    log_message(
-                        sprintf("New Klarna create request:\n\n%s\n", var_export($data, true)),
-                        'klarna_api.log'
-                    );
-                }
-
                 $klarnaCheckout = new KlarnaOrder($connector);
-                $klarnaCheckout->create($data);
+                $klarnaCheckout->create(
+                    [
+                        'purchase_country'         => $this->config->country,
+                        'purchase_currency'        => $this->config->currency,
+                        'locale'                   => $this->request->getLocale(),
+                        'order_amount'             => (int) round($this->cart->getTotal() * 100, 0),
+                        'order_tax_amount'         => (int) round(
+                            ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
+                        0
+                        ),
+                        'order_lines'              => $this->orderLines(),
+                        'merchant_urls'            => [
+                            'terms'                  => $this->uri($this->klarna_terms_page),
+                        'cancellation_terms'     => $this->uri($this->klarna_cancellation_terms_page),
+                            'checkout'               => $this->uri($this->klarna_checkout_page),
+                            'confirmation'           => $this->uri($this->klarna_confirmation_page)
+                                                        . '?klarna_order_id={checkout.order.id}',
+                            'push'                   => urldecode(
+                                System::getContainer()->get('router')->generate(
+                                    'richardhj.klarna_checkout.push',
+                                    ['orderId' => '{checkout.order.id}'],
+                                    UrlGeneratorInterface::ABSOLUTE_URL
+                                )
+                            ),
+                            'shipping_option_update' => urldecode(
+                                System::getContainer()->get('router')->generate(
+                                    'richardhj.klarna_checkout.callback.shipping_option_update',
+                                    ['orderId' => '{checkout.order.id}'],
+                                    UrlGeneratorInterface::ABSOLUTE_URL
+                                )
+                            ),
+                            'address_update'         => urldecode(
+                                System::getContainer()->get('router')->generate(
+                                    'richardhj.klarna_checkout.callback.address_update',
+                                    ['orderId' => '{checkout.order.id}'],
+                                    UrlGeneratorInterface::ABSOLUTE_URL
+                                )
+                            ),
+                            'country_change'         => urldecode(
+                                System::getContainer()->get('router')->generate(
+                                    'richardhj.klarna_checkout.callback.country_change',
+                                    ['orderId' => '{checkout.order.id}'],
+                                    UrlGeneratorInterface::ABSOLUTE_URL
+                                )
+                            ),
+                            'validation'             => System::getContainer()->get('router')->generate(
+                                'richardhj.klarna_checkout.callback.order_validation',
+                                [],
+                                UrlGeneratorInterface::ABSOLUTE_URL
+                            ),
+                        ],
+                        'billing_address'          => $billingAddress,
+                        'shipping_address'         => $shippingAddress,
+                        'shipping_options'         => $this->shippingOptions(
+                            StringUtil::deserialize($this->iso_shipping_modules, true)
+                        ),
+                        'shipping_countries'       => $this->config->getShippingCountries(),
+                        'external_payment_methods' => $this->externalPaymentMethods(),
+                        'options'                  => [
+                            'allow_separate_shipping_address'   => [] !== $this->config->getShippingFields(),
+                            'color_button'                      => $this->klarna_color_button
+                                ? '#' . $this->klarna_color_button
+                                : null,
+                            'color_button_text'                 => $this->klarna_color_button_text
+                                ? '#' . $this->klarna_color_button_text
+                                : null,
+                            'color_checkbox'                    => $this->klarna_color_checkbox
+                                ? '#' . $this->klarna_color_checkbox
+                                : null,
+                            'color_checkbox_checkmark'          => $this->klarna_color_checkbox_checkmark
+                                ? '#' . $this->klarna_color_checkbox_checkmark
+                                : null,
+                            'color_header'                      => $this->klarna_color_header
+                                ? '#' . $this->klarna_color_header
+                                : null,
+                            'color_link'                        => $this->klarna_color_link
+                                ? '#' . $this->klarna_color_link
+                                : null,
+                            'require_validate_callback_success' => true,
+                            'show_subtotal_detail'              => (bool) $this->klarna_show_subtotal_detail,
+                        ],
+                        'merchant_data'            => http_build_query(['member' => $this->user->id ?? null]),
+                    ]
+                );
 
                 $this->cart->klarna_checkout_module = $this->id;
             }

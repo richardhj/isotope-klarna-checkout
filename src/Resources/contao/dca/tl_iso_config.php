@@ -59,13 +59,3 @@ $GLOBALS['TL_DCA']['tl_iso_config']['fields']['klarna_api_test'] = [
     ],
     'sql'       => "char(1) NOT NULL default ''",
 ];
-
-$GLOBALS['TL_DCA']['tl_iso_config']['fields']['klarna_debug'] = [
-    'label'     => &$GLOBALS['TL_LANG']['tl_iso_config']['klarna_debug'],
-    'exclude'   => true,
-    'inputType' => 'checkbox',
-    'eval'      => [
-        'tl_class' => 'w50',
-    ],
-    'sql'       => "char(1) NOT NULL default ''",
-];
