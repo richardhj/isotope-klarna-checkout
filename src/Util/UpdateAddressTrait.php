@@ -32,16 +32,16 @@ trait UpdateAddressTrait
      */
     private function updateAddressByApiResponse(Address $address, array $data): Address
     {
-        $address->company    = $data['organization_name'];
-        $address->firstname  = $data['given_name'];
-        $address->lastname   = $data['family_name'];
-        $address->email      = $data['email'];
-        $address->salutation = $data['title'];
-        $address->street_1   = $data['street_address'];
-        $address->street_2   = $data['street_address2'];
-        $address->postal     = $data['postal_code'];
-        $address->city       = $data['city'];
-        $address->country    = $data['country'];
+        $address->company    = $data['organization_name'] ?? '';
+        $address->firstname  = $data['given_name'] ?? '';
+        $address->lastname   = $data['family_name'] ?? '';
+        $address->email      = $data['email'] ?? '';
+        $address->salutation = $data['title'] ?? '';
+        $address->street_1   = $data['street_address'] ?? '';
+        $address->street_2   = $data['street_address2'] ?? '';
+        $address->postal     = $data['postal_code'] ?? '';
+        $address->city       = $data['city'] ?? '';
+        $address->country    = $data['country'] ?? '';
 
         $address->save();
 
