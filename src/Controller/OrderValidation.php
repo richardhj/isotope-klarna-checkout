@@ -42,6 +42,9 @@ class OrderValidation
         $this->cart = IsotopeCart::findOneBy('klarna_order_id', $data->order_id);
         Isotope::setCart($this->cart);
 
+        // Set the correct locale, see #7.
+        $GLOBALS['TL_LANGUAGE'] = $data->locale;
+
         $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $data->order_id);
         if (null !== $isotopeOrder) {
             if (!$isotopeOrder->isLocked()) {
