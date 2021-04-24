@@ -233,6 +233,9 @@ class KlarnaCheckout extends Module
         /** @var RouterInterface $router */
         $router = System::getContainer()->get('router');
 
+        $billingFieldsConfig = $this->config->getBillingFieldsConfig();
+        $companyConfig = array_filter($billingFieldsConfig, static function (array $c) {return 'company' === $c['value']; })[0] ?? [];
+
         return [
             'purchase_country' => $this->config->country,
             'purchase_currency' => $this->config->currency,
@@ -312,6 +315,8 @@ class KlarnaCheckout extends Module
                 'color_link' => $this->klarna_color_link
                     ? '#'.$this->klarna_color_link
                     : null,
+                'allowed_customer_types' => $companyConfig && $companyConfig['mandatory'] ? ['organization'] :
+                    ($companyConfig && $companyConfig['enabled'] ? ['organization', 'person'] : ['person']),
                 'require_validate_callback_success' => true,
                 'show_subtotal_detail' => (bool) $this->klarna_show_subtotal_detail,
             ],
