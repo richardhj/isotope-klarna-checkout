@@ -1,18 +1,19 @@
 <?php
 
-/**
+declare(strict_types=1);
+
+/*
  * This file is part of richardhj/isotope-klarna-checkout.
  *
- * Copyright (c) 2018-2018 Richard Henkenjohann
+ * Copyright (c) 2018-2021 Richard Henkenjohann
  *
  * @package   richardhj/isotope-klarna-checkout
  * @author    Richard Henkenjohann <richardhenkenjohann@googlemail.com>
- * @copyright 2018-2018 Richard Henkenjohann
+ * @copyright 2018-2021 Richard Henkenjohann
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
-
 
 use Contao\BackendTemplate;
 use Contao\CoreBundle\Exception\PageNotFoundException;
@@ -38,11 +39,10 @@ use Symfony\Component\HttpFoundation\Request;
 
 class KlarnaCheckoutConfirmation extends Module
 {
-
     use UpdateAddressTrait;
 
     /**
-     * Template
+     * Template.
      *
      * @var string
      */
@@ -68,14 +68,12 @@ class KlarnaCheckoutConfirmation extends Module
     {
         parent::__construct($module, $column);
 
-        $this->config  = Isotope::getConfig();
+        $this->config = Isotope::getConfig();
         $this->request = System::getContainer()->get('request_stack')->getCurrentRequest();
     }
 
     /**
-     * Parse the template
-     *
-     * @return string
+     * Parse the template.
      */
     public function generate(): string
     {
@@ -84,10 +82,10 @@ class KlarnaCheckoutConfirmation extends Module
             $template->setData(
                 [
                     'wildcard' => '### '.strtoupper($GLOBALS['TL_LANG']['FMD'][$this->type][0]).' ###',
-                    'title'    => $this->headline,
-                    'id'       => $this->id,
-                    'link'     => $this->name,
-                    'href'     => 'contao/main?do=themes&amp;table=tl_module&amp;act=edit&amp;id='.$this->id,
+                    'title' => $this->headline,
+                    'id' => $this->id,
+                    'link' => $this->name,
+                    'href' => 'contao/main?do=themes&amp;table=tl_module&amp;act=edit&amp;id='.$this->id,
                 ]
             );
 
@@ -98,18 +96,18 @@ class KlarnaCheckoutConfirmation extends Module
     }
 
     /**
-     * Compile the current element
-     *
-     * @return void
+     * Compile the current element.
      *
      * @throws RequestException          When an error is encountered
      * @throws PageNotFoundException     If order is not found
-     * @throws RedirectResponseException If the checkout is not completed yet.
+     * @throws RedirectResponseException if the checkout is not completed yet
      * @throws \RuntimeException         On an unexpected API response
      * @throws \RuntimeException         If the response content type is not JSON
      * @throws ConnectorException        When the API replies with an error response
      * @throws \InvalidArgumentException If the JSON cannot be parsed
-     * @throws \LogicException           If Klarna not configured in Isotope config.
+     * @throws \LogicException           if Klarna not configured in Isotope config
+     *
+     * @return void
      */
     protected function compile()
     {
@@ -124,10 +122,10 @@ class KlarnaCheckoutConfirmation extends Module
             return;
         }
 
-        $orderId     = $this->request->query->get('klarna_order_id');
+        $orderId = $this->request->query->get('klarna_order_id');
         $apiUsername = $this->config->klarna_api_username;
         $apiPassword = $this->config->klarna_api_password;
-        $connector   = KlarnaConnector::create(
+        $connector = KlarnaConnector::create(
             $apiUsername,
             $apiPassword,
             $this->config->klarna_api_test ? ConnectorInterface::EU_TEST_BASE_URL : ConnectorInterface::EU_BASE_URL
@@ -152,7 +150,7 @@ class KlarnaCheckoutConfirmation extends Module
         if ('checkout_incomplete' === $klarnaCheckout['status']) {
             // Checkout incomplete. Back to the checkout.
             $page = PageModel::findById($this->klarna_checkout_page);
-            $uri  = (null !== $page) ? $page->getFrontendUrl() : '';
+            $uri = (null !== $page) ? $page->getFrontendUrl() : '';
 
             throw new RedirectResponseException($uri);
         }
@@ -167,10 +165,10 @@ class KlarnaCheckoutConfirmation extends Module
             return;
         }
 
-        $isotopeOrder->nc_notification      = $this->nc_notification;
+        $isotopeOrder->nc_notification = $this->nc_notification;
         $isotopeOrder->iso_addToAddressbook = $this->iso_addToAddressbook;
 
-        $billingAddress  = $klarnaCheckout['billing_address'];
+        $billingAddress = $klarnaCheckout['billing_address'];
         $shippingAddress = $klarnaCheckout['shipping_address'];
 
         // Update billing address

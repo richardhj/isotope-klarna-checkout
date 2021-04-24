@@ -1,18 +1,19 @@
 <?php
 
-/**
+declare(strict_types=1);
+
+/*
  * This file is part of richardhj/isotope-klarna-checkout.
  *
- * Copyright (c) 2018-2018 Richard Henkenjohann
+ * Copyright (c) 2018-2021 Richard Henkenjohann
  *
  * @package   richardhj/isotope-klarna-checkout
  * @author    Richard Henkenjohann <richardhenkenjohann@googlemail.com>
- * @copyright 2018-2018 Richard Henkenjohann
+ * @copyright 2018-2021 Richard Henkenjohann
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Util;
-
 
 use Contao\Model;
 use Isotope\Isotope;
@@ -21,7 +22,6 @@ use Isotope\Model\Shipping;
 
 trait GetShippingOptionsTrait
 {
-
     /**
      * @var Cart|Model
      */
@@ -30,13 +30,11 @@ trait GetShippingOptionsTrait
     /**
      * Get the shipping options as api-conform array.
      *
-     * @param array $shippingIds The ids of the shipping methods allowed.
-     *
-     * @return array
+     * @param array $shippingIds the ids of the shipping methods allowed
      */
     private function shippingOptions(array $shippingIds): array
     {
-        if (empty($shippingIds) || !\is_array($shippingIds)) {
+        if (empty($shippingIds)) {
             return [];
         }
 

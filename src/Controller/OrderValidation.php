@@ -1,13 +1,15 @@
 <?php
 
-/**
+declare(strict_types=1);
+
+/*
  * This file is part of richardhj/isotope-klarna-checkout.
  *
- * Copyright (c) 2018-2018 Richard Henkenjohann
+ * Copyright (c) 2018-2021 Richard Henkenjohann
  *
  * @package   richardhj/isotope-klarna-checkout
  * @author    Richard Henkenjohann <richardhenkenjohann@googlemail.com>
- * @copyright 2018-2018 Richard Henkenjohann
+ * @copyright 2018-2021 Richard Henkenjohann
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
@@ -24,7 +26,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class OrderValidation
 {
-
     use CanCheckoutTrait;
 
     /**
@@ -58,20 +59,17 @@ class OrderValidation
             return new JsonResponse($data);
         }
 
-
         // Create order
         $isotopeOrder = $this->cart->getDraftOrder();
 
         $isotopeOrder->klarna_order_id = $data->order_id;
 
         if (false === $this->checkPreCheckoutHook($isotopeOrder) || false === $this->canCheckout()) {
-            return new JsonResponse(
-                [
-                    'error_type' => 'address_error',
-                    //'error_text' => $this->translator->trans('ERR.orderFailed', null, $data->locale),
-                    'error_text' => $GLOBALS['TL_LANG']['ERR']['orderFailed'],
-                ], Response::HTTP_BAD_REQUEST
-            );
+            return new JsonResponse([
+                'error_type' => 'address_error',
+                //'error_text' => $this->translator->trans('ERR.orderFailed', null, $data->locale),
+                'error_text' => $GLOBALS['TL_LANG']['ERR']['orderFailed'],
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         $isotopeOrder->lock();

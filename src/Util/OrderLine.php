@@ -1,18 +1,19 @@
 <?php
 
-/**
+declare(strict_types=1);
+
+/*
  * This file is part of richardhj/isotope-klarna-checkout.
  *
- * Copyright (c) 2018-2018 Richard Henkenjohann
+ * Copyright (c) 2018-2021 Richard Henkenjohann
  *
  * @package   richardhj/isotope-klarna-checkout
  * @author    Richard Henkenjohann <richardhenkenjohann@googlemail.com>
- * @copyright 2018-2018 Richard Henkenjohann
+ * @copyright 2018-2021 Richard Henkenjohann
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Util;
-
 
 use Contao\Environment;
 use Contao\Model;
@@ -28,30 +29,14 @@ use Isotope\Model\ProductType;
 
 final class OrderLine
 {
-
-    const TYPE_PHYSICAL     = 'physical';
-    const TYPE_DISCOUNT     = 'discount';
+    const TYPE_PHYSICAL = 'physical';
+    const TYPE_DISCOUNT = 'discount';
     const TYPE_SHIPPING_FEE = 'shipping_fee';
-    const TYPE_SALES_TAX    = 'sales_tax';
-    const TYPE_DIGITAL      = 'digital';
-    const TYPE_GIFT_CARD    = 'gift_card';
+    const TYPE_SALES_TAX = 'sales_tax';
+    const TYPE_DIGITAL = 'digital';
+    const TYPE_GIFT_CARD = 'gift_card';
     const TYPE_STORE_CREDIT = 'store_credit';
-    const TYPE_SURCHARGE    = 'surcharge';
-
-    /**
-     * @var ProductCollectionItem|Model
-     */
-    private $item;
-
-    /**
-     * @var ProductCollectionSurcharge
-     */
-    private $surcharge;
-
-    /**
-     * @var IsotopeProductCollection
-     */
-    private $collection;
+    const TYPE_SURCHARGE = 'surcharge';
 
     /**
      * @var string
@@ -69,7 +54,7 @@ final class OrderLine
     public $name;
 
     /**
-     * @var integer
+     * @var int
      */
     public $quantity;
 
@@ -79,27 +64,27 @@ final class OrderLine
     public $quantity_unit;
 
     /**
-     * @var integer
+     * @var int
      */
     public $unit_price;
 
     /**
-     * @var integer
+     * @var int
      */
     public $tax_rate;
 
     /**
-     * @var integer
+     * @var int
      */
     public $total_amount;
 
     /**
-     * @var integer
+     * @var int
      */
     public $total_discount_amount;
 
     /**
-     * @var integer
+     * @var int
      */
     public $total_tax_amount;
 
@@ -124,14 +109,27 @@ final class OrderLine
     public $product_identifiers;
 
     /**
+     * @var ProductCollectionItem|Model
+     */
+    private $item;
+
+    /**
+     * @var ProductCollectionSurcharge
+     */
+    private $surcharge;
+
+    /**
+     * @var IsotopeProductCollection
+     */
+    private $collection;
+
+    /**
      * @var Connection
      */
     private $connection;
 
     /**
      * OrderLine constructor.
-     *
-     * @param Connection $connection
      */
     public function __construct(Connection $connection)
     {
@@ -146,29 +144,17 @@ final class OrderLine
         $this->item = $item;
     }
 
-    /**
-     * @param ProductCollectionSurcharge $surcharge
-     */
     public function setSurcharge(ProductCollectionSurcharge $surcharge)
     {
         $this->surcharge = $surcharge;
     }
 
-    /**
-     * @param IsotopeProductCollection $collection
-     */
     public function setCollection(IsotopeProductCollection $collection)
     {
         $this->collection = $collection;
     }
 
-    /**
-     * @param ProductCollectionItem    $item
-     * @param IsotopeProductCollection $collection
-     *
-     * @return OrderLine
-     */
-    public static function createFromItem(ProductCollectionItem $item, IsotopeProductCollection $collection): OrderLine
+    public static function createFromItem(ProductCollectionItem $item, IsotopeProductCollection $collection): self
     {
         /** @var Connection $connection */
         $connection = System::getContainer()->get('database_connection');
@@ -182,8 +168,6 @@ final class OrderLine
     }
 
     /**
-     * @param ProductCollectionSurcharge $surcharge
-     *
      * @return OrderLine|null
      */
     public static function createForSurcharge(ProductCollectionSurcharge $surcharge)
@@ -195,7 +179,7 @@ final class OrderLine
         $self->setSurcharge($surcharge);
 
         if ($surcharge instanceof ProductCollectionSurcharge\Rule
-            && ($surcharge->type === 'product' || 'subtotal' !== $surcharge->applyTo)) {
+            && ('product' === $surcharge->type || 'subtotal' !== $surcharge->applyTo)) {
             // In case that the rule applies to the product, we need to alter the $total_discount_amount instead
             return null;
         }
@@ -211,19 +195,19 @@ final class OrderLine
     private function processItem()
     {
         $this->reference = $this->item->getSku();
-        $this->name      = $this->item->getName();
-        $this->quantity  = $this->item->quantity;
+        $this->name = $this->item->getName();
+        $this->quantity = $this->item->quantity;
 
         $this->addTotalDiscountAmountForItem();
-        $this->unit_price   = (int) round($this->item->getPrice() * 100, 0);
-        $this->total_amount = (int) round(($this->item->getTotalPrice() - $this->total_discount_amount / 100) * 100,0);
+        $this->unit_price = (int) round($this->item->getPrice() * 100, 0);
+        $this->total_amount = (int) round(($this->item->getTotalPrice() - $this->total_discount_amount / 100) * 100, 0);
 
         $this->addTaxRateForItem();
         $this->total_tax_amount = 0;
         if (0 === $this->tax_rate) {
             // No distinct tax rate was found, maybe multiple taxes apply, simply calculate the tax_rate
             $taxFreePrice = (int) round($this->item->getTaxFreePrice() * 100, 0);
-            $price        = (int) round($this->item->getPrice() * 100, 0);
+            $price = (int) round($this->item->getPrice() * 100, 0);
 
             if ($taxFreePrice > 0) {
                 $taxRate = ($price - $taxFreePrice) / $taxFreePrice;
@@ -247,18 +231,18 @@ final class OrderLine
      */
     private function processSurcharge()
     {
-        $this->reference    = $this->surcharge->id;
-        $this->name         = $this->surcharge->label;
-        $this->quantity     = 1;
-        $this->unit_price   = (int) round($this->surcharge->total_price * 100, 0);
+        $this->reference = $this->surcharge->id;
+        $this->name = $this->surcharge->label;
+        $this->quantity = 1;
+        $this->unit_price = (int) round($this->surcharge->total_price * 100, 0);
         $this->total_amount = (int) round($this->surcharge->total_price * 100, 0);
 
         if ($this->surcharge->hasTax()) {
             $this->total_tax_amount =
                 (int) round(($this->surcharge->total_price - $this->surcharge->tax_free_total_price) * 100, 0);
-            $this->tax_rate         = (int)round(($this->total_tax_amount / $this->total_amount) * 1000, 0);
+            $this->tax_rate = (int) round(($this->total_tax_amount / $this->total_amount) * 1000, 0);
         } else {
-            $this->tax_rate         = 0;
+            $this->tax_rate = 0;
             $this->total_tax_amount = 0;
         }
 
@@ -310,7 +294,7 @@ final class OrderLine
     {
         try {
             $product = $this->item->getProduct();
-            $jumpTo  = $this->item->getRelated('jumpTo');
+            $jumpTo = $this->item->getRelated('jumpTo');
             if (null !== $jumpTo && null !== $product
                 && $this->item->hasProduct()
                 && $product->isAvailableInFrontend()) {
@@ -390,9 +374,9 @@ final class OrderLine
      */
     private function addTotalDiscountAmountForItem(): void
     {
-        foreach ((array)$this->collection->getSurcharges() as $surcharge) {
+        foreach ((array) $this->collection->getSurcharges() as $surcharge) {
             if (!$surcharge instanceof ProductCollectionSurcharge\Rule
-                || ($surcharge->type === 'cart' && 'subtotal' === $surcharge->applyTo)) {
+                || ('cart' === $surcharge->type && 'subtotal' === $surcharge->applyTo)) {
                 continue;
             }
 
@@ -400,6 +384,6 @@ final class OrderLine
             $this->total_discount_amount += ($surcharge->getAmountForCollectionItem($this->item) * (-1));
         }
 
-        $this->total_discount_amount = (int)round($this->total_discount_amount * 100, 0);
+        $this->total_discount_amount = (int) round($this->total_discount_amount * 100, 0);
     }
 }

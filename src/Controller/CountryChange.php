@@ -1,19 +1,20 @@
 <?php
 
-/**
+declare(strict_types=1);
+
+/*
  * This file is part of richardhj/isotope-klarna-checkout.
  *
- * Copyright (c) 2018-2018 Richard Henkenjohann
+ * Copyright (c) 2018-2021 Richard Henkenjohann
  *
  * @package   richardhj/isotope-klarna-checkout
  * @author    Richard Henkenjohann <richardhenkenjohann@googlemail.com>
- * @copyright 2018-2018 Richard Henkenjohann
+ * @copyright 2018-2021 Richard Henkenjohann
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
-use Contao\CoreBundle\Exception\PageNotFoundException;
 use Contao\ModuleModel;
 use Contao\StringUtil;
 use Isotope\Isotope;
@@ -27,7 +28,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CountryChange
 {
-
     use GetOrderLinesTrait;
     use GetShippingOptionsTrait;
     use UpdateAddressTrait;
@@ -36,6 +36,8 @@ class CountryChange
      * Will be called whenever the consumer changes billing address country. Time to update shipping, tax and purchase
      * currency.
      * The response will contain an error if the billing country is not supported as per shop config.
+     *
+     * @param mixed $orderId
      */
     public function __invoke($orderId, Request $request): Response
     {
@@ -48,7 +50,7 @@ class CountryChange
         $billingCountry = $billingAddress->country;
 
         $this->cart = Cart::findOneBy('klarna_order_id', $orderId);
-        $config     = $this->cart->getConfig();
+        $config = $this->cart->getConfig();
         if (null === $config) {
             return new JsonResponse(['error_type' => 'unsupported_shipping_address'], Response::HTTP_BAD_REQUEST);
         }
@@ -58,9 +60,9 @@ class CountryChange
             return new JsonResponse(['error_type' => 'unsupported_shipping_address'], Response::HTTP_BAD_REQUEST);
         }
 
-        $billingAddress  = $data->billing_address;
+        $billingAddress = $data->billing_address;
         $shippingAddress = $data->shipping_address;
-        $checkoutModule  = ModuleModel::findById($this->cart->klarna_checkout_module);
+        $checkoutModule = ModuleModel::findById($this->cart->klarna_checkout_module);
         if (null === $checkoutModule) {
             return new JsonResponse(['error_type' => 'unsupported_shipping_address'], Response::HTTP_BAD_REQUEST);
         }
@@ -90,9 +92,9 @@ class CountryChange
 
         // Update order since shipping method may get updated
         $data->shipping_options = $shippingOptions;
-        $data->order_amount     = (int) round($this->cart->getTotal() * 100, 0);
+        $data->order_amount = (int) round($this->cart->getTotal() * 100, 0);
         $data->order_tax_amount = (int) round(($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100, 0);
-        $data->order_lines      = $this->orderLines();
+        $data->order_lines = $this->orderLines();
 
         return new JsonResponse($data);
     }

@@ -1,18 +1,19 @@
 <?php
 
-/**
+declare(strict_types=1);
+
+/*
  * This file is part of richardhj/isotope-klarna-checkout.
  *
- * Copyright (c) 2018-2018 Richard Henkenjohann
+ * Copyright (c) 2018-2021 Richard Henkenjohann
  *
  * @package   richardhj/isotope-klarna-checkout
  * @author    Richard Henkenjohann <richardhenkenjohann@googlemail.com>
- * @copyright 2018-2018 Richard Henkenjohann
+ * @copyright 2018-2021 Richard Henkenjohann
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Module;
-
 
 use Contao\BackendTemplate;
 use Contao\CoreBundle\Exception\NoRootPageFoundException;
@@ -51,14 +52,13 @@ use Symfony\Component\Routing\RouterInterface;
 
 class KlarnaCheckout extends Module
 {
-
     use CanCheckoutTrait;
     use GetOrderLinesTrait;
     use GetShippingOptionsTrait;
     use UpdateAddressTrait;
 
     /**
-     * Template
+     * Template.
      *
      * @var string
      */
@@ -92,16 +92,14 @@ class KlarnaCheckout extends Module
     {
         parent::__construct($module, $column);
 
-        $this->config  = Isotope::getConfig();
-        $this->cart    = Isotope::getCart();
-        $this->user    = FrontendUser::getInstance();
+        $this->config = Isotope::getConfig();
+        $this->cart = Isotope::getCart();
+        $this->user = FrontendUser::getInstance();
         $this->request = System::getContainer()->get('request_stack')->getCurrentRequest();
     }
 
     /**
-     * Parse the template
-     *
-     * @return string
+     * Parse the template.
      */
     public function generate(): string
     {
@@ -109,11 +107,11 @@ class KlarnaCheckout extends Module
             $template = new BackendTemplate('be_wildcard');
             $template->setData(
                 [
-                    'wildcard' => '### ' . strtoupper($GLOBALS['TL_LANG']['FMD'][$this->type][0]) . ' ###',
-                    'title'    => $this->headline,
-                    'id'       => $this->id,
-                    'link'     => $this->name,
-                    'href'     => 'contao/main.php?do=themes&amp;table=tl_module&amp;act=edit&amp;id=' . $this->id,
+                    'wildcard' => '### '.strtoupper($GLOBALS['TL_LANG']['FMD'][$this->type][0]).' ###',
+                    'title' => $this->headline,
+                    'id' => $this->id,
+                    'link' => $this->name,
+                    'href' => 'contao/main.php?do=themes&amp;table=tl_module&amp;act=edit&amp;id='.$this->id,
                 ]
             );
 
@@ -124,7 +122,7 @@ class KlarnaCheckout extends Module
     }
 
     /**
-     * Compile the current element
+     * Compile the current element.
      *
      * @throws RedirectResponseException
      * @throws PageNotFoundException
@@ -157,13 +155,13 @@ class KlarnaCheckout extends Module
 
         $apiUsername = $this->config->klarna_api_username;
         $apiPassword = $this->config->klarna_api_password;
-        $connector   = KlarnaConnector::create(
+        $connector = KlarnaConnector::create(
             $apiUsername,
             $apiPassword,
             $this->config->klarna_api_test ? ConnectorInterface::EU_TEST_BASE_URL : ConnectorInterface::EU_BASE_URL
         );
 
-        $klarnaOrderId  = $this->cart->klarna_order_id;
+        $klarnaOrderId = $this->cart->klarna_order_id;
         $klarnaCheckout = null;
 
         if (false === $this->canCheckout()) {
@@ -201,7 +199,6 @@ class KlarnaCheckout extends Module
             }
 
             $klarnaCheckout->fetch();
-
         } catch (RequestException $e) {
             $this->handleApiException($e);
 
@@ -222,7 +219,7 @@ class KlarnaCheckout extends Module
     {
         // Load addresses from address book for logged in members
         $shippingAddress = null;
-        $billingAddress  = null;
+        $billingAddress = null;
         if (FE_USER_LOGGED_IN) {
             if ($address = Address::findDefaultBillingForMember($this->user->id)) {
                 $shippingAddress = $this->getApiDataFromAddress($address);
@@ -237,24 +234,24 @@ class KlarnaCheckout extends Module
         $router = System::getContainer()->get('router');
 
         return [
-            'purchase_country'         => $this->config->country,
-            'purchase_currency'        => $this->config->currency,
-            'locale'                   => $this->request->getLocale(),
-            'order_amount'             => (int) round($this->cart->getTotal() * 100, 0),
-            'order_tax_amount'         => (int) round(
+            'purchase_country' => $this->config->country,
+            'purchase_currency' => $this->config->currency,
+            'locale' => $this->request->getLocale(),
+            'order_amount' => (int) round($this->cart->getTotal() * 100, 0),
+            'order_tax_amount' => (int) round(
                 ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100,
                 0
             ),
-            'order_lines'              => $this->orderLines(),
-            'merchant_urls'            => [
-                'terms'                  => $this->uri($this->klarna_terms_page),
-                'cancellation_terms'     => $this->uri($this->klarna_cancellation_terms_page),
-                'checkout'               => $this->uri($this->klarna_checkout_page),
-                'confirmation'           => sprintf(
+            'order_lines' => $this->orderLines(),
+            'merchant_urls' => [
+                'terms' => $this->uri($this->klarna_terms_page),
+                'cancellation_terms' => $this->uri($this->klarna_cancellation_terms_page),
+                'checkout' => $this->uri($this->klarna_checkout_page),
+                'confirmation' => sprintf(
                     '%s?klarna_order_id={checkout.order.id}',
                     $this->uri($this->klarna_confirmation_page)
                 ),
-                'push'                   => urldecode(
+                'push' => urldecode(
                     $router->generate(
                         'richardhj.klarna_checkout.push',
                         ['orderId' => '{checkout.order.id}'],
@@ -268,57 +265,57 @@ class KlarnaCheckout extends Module
                         UrlGeneratorInterface::ABSOLUTE_URL
                     )
                 ),
-                'address_update'         => urldecode(
+                'address_update' => urldecode(
                     $router->generate(
                         'richardhj.klarna_checkout.callback.address_update',
                         ['orderId' => '{checkout.order.id}'],
                         UrlGeneratorInterface::ABSOLUTE_URL
                     )
                 ),
-                'country_change'         => urldecode(
+                'country_change' => urldecode(
                     $router->generate(
                         'richardhj.klarna_checkout.callback.country_change',
                         ['orderId' => '{checkout.order.id}'],
                         UrlGeneratorInterface::ABSOLUTE_URL
                     )
                 ),
-                'validation'             => $router->generate(
+                'validation' => $router->generate(
                     'richardhj.klarna_checkout.callback.order_validation',
                     [],
                     UrlGeneratorInterface::ABSOLUTE_URL
                 ),
             ],
-            'billing_address'          => $billingAddress,
-            'shipping_address'         => $shippingAddress,
-            'shipping_options'         => $this->shippingOptions(
+            'billing_address' => $billingAddress,
+            'shipping_address' => $shippingAddress,
+            'shipping_options' => $this->shippingOptions(
                 StringUtil::deserialize($this->iso_shipping_modules, true)
             ),
-            'shipping_countries'       => $this->config->getShippingCountries(),
+            'shipping_countries' => $this->config->getShippingCountries(),
             'external_payment_methods' => $this->externalPaymentMethods(),
-            'options'                  => [
-                'allow_separate_shipping_address'   => [] !== $this->config->getShippingFields(),
-                'color_button'                      => $this->klarna_color_button
-                    ? '#' . $this->klarna_color_button
+            'options' => [
+                'allow_separate_shipping_address' => [] !== $this->config->getShippingFields(),
+                'color_button' => $this->klarna_color_button
+                    ? '#'.$this->klarna_color_button
                     : null,
-                'color_button_text'                 => $this->klarna_color_button_text
-                    ? '#' . $this->klarna_color_button_text
+                'color_button_text' => $this->klarna_color_button_text
+                    ? '#'.$this->klarna_color_button_text
                     : null,
-                'color_checkbox'                    => $this->klarna_color_checkbox
-                    ? '#' . $this->klarna_color_checkbox
+                'color_checkbox' => $this->klarna_color_checkbox
+                    ? '#'.$this->klarna_color_checkbox
                     : null,
-                'color_checkbox_checkmark'          => $this->klarna_color_checkbox_checkmark
-                    ? '#' . $this->klarna_color_checkbox_checkmark
+                'color_checkbox_checkmark' => $this->klarna_color_checkbox_checkmark
+                    ? '#'.$this->klarna_color_checkbox_checkmark
                     : null,
-                'color_header'                      => $this->klarna_color_header
-                    ? '#' . $this->klarna_color_header
+                'color_header' => $this->klarna_color_header
+                    ? '#'.$this->klarna_color_header
                     : null,
-                'color_link'                        => $this->klarna_color_link
-                    ? '#' . $this->klarna_color_link
+                'color_link' => $this->klarna_color_link
+                    ? '#'.$this->klarna_color_link
                     : null,
                 'require_validate_callback_success' => true,
-                'show_subtotal_detail'              => (bool) $this->klarna_show_subtotal_detail,
+                'show_subtotal_detail' => (bool) $this->klarna_show_subtotal_detail,
             ],
-            'merchant_data'            => http_build_query(['member' => $this->user->id ?? null]),
+            'merchant_data' => http_build_query(['member' => $this->user->id ?? null]),
         ];
     }
 
@@ -335,9 +332,7 @@ class KlarnaCheckout extends Module
                 /** @var Order|Model $isotopeOrder */
                 if (null === ($isotopeOrder = Order::findOneBy('uniqid', $this->request->query->get('uid')))) {
                     if ($this->cart->isEmpty()) {
-                        throw new PageNotFoundException(
-                            'Order with unique id not found: ' . $this->request->query->get('uid')
-                        );
+                        throw new PageNotFoundException('Order with unique id not found: '.$this->request->query->get('uid'));
                     }
 
                     $this->Template->gui = 'An error occurred.';
@@ -347,9 +342,7 @@ class KlarnaCheckout extends Module
 
                 // Order already completed (see isotope/core#1441)
                 if ($isotopeOrder->checkout_complete) {
-                    throw new RedirectResponseException(
-                        $this->uri($this->klarna_confirmation_page) . '?uid=' . $isotopeOrder->getUniqueId()
-                    );
+                    throw new RedirectResponseException($this->uri($this->klarna_confirmation_page).'?uid='.$isotopeOrder->getUniqueId());
                 }
 
                 // No external payment
@@ -361,9 +354,7 @@ class KlarnaCheckout extends Module
                 if (true === $processPayment) {
                     // If checkout is successful, complete order and redirect to confirmation page
                     if ($isotopeOrder->checkout() && $isotopeOrder->complete()) {
-                        throw new RedirectResponseException(
-                            $this->uri($this->klarna_confirmation_page) . '?uid=' . $isotopeOrder->getUniqueId()
-                        );
+                        throw new RedirectResponseException($this->uri($this->klarna_confirmation_page).'?uid='.$isotopeOrder->getUniqueId());
                     }
 
                     // Checkout failed, show error message
@@ -386,16 +377,15 @@ class KlarnaCheckout extends Module
 
                 break;
 
-
             case 'process':
                 $isotopeOrder = $this->cart->getDraftOrder();
 
-                $isotopeOrder->nc_notification      = $this->nc_notification;
+                $isotopeOrder->nc_notification = $this->nc_notification;
                 $isotopeOrder->iso_addToAddressbook = $this->iso_addToAddressbook;
 
                 if (false === $isotopeOrder->hasPayment()) {
                     /** @var Payment $payment */
-                    $payment           = Payment::findByPk($this->request->query->get('pay'));
+                    $payment = Payment::findByPk($this->request->query->get('pay'));
                     $allowedPaymentIds = array_map('\intval', deserialize($this->iso_payment_modules, true));
                     if (null === $payment
                         || false === $payment->isAvailable()
@@ -413,9 +403,7 @@ class KlarnaCheckout extends Module
                 // Generate checkout form that redirects to the payment provider
                 $checkoutForm = $isotopeOrder->getPaymentMethod()->checkoutForm($isotopeOrder, $this);
                 if (false === $checkoutForm) {
-                    throw new RedirectResponseException(
-                        '/' . NativeCheckout::generateUrlForStep(NativeCheckout::STEP_COMPLETE, $isotopeOrder)
-                    );
+                    throw new RedirectResponseException('/'.NativeCheckout::generateUrlForStep(NativeCheckout::STEP_COMPLETE, $isotopeOrder));
                 }
 
                 $this->Template->gui = $checkoutForm;
@@ -424,9 +412,6 @@ class KlarnaCheckout extends Module
         }
     }
 
-    /**
-     * @return array
-     */
     private function externalPaymentMethods(): array
     {
         $paymentIds = deserialize($this->iso_payment_modules, true);
@@ -436,7 +421,7 @@ class KlarnaCheckout extends Module
 
         $methods = [];
         /** @var Payment[] $paymentMethods */
-        $paymentMethods = Payment::findBy(['id IN (' . implode(',', $paymentIds) . ')', "enabled='1'"], null);
+        $paymentMethods = Payment::findBy(['id IN ('.implode(',', $paymentIds).')', "enabled='1'"], null);
         if (null !== $paymentMethods) {
             foreach ($paymentMethods as $paymentMethod) {
                 // NB: We do not check whether the payment method is available as it may differ by the billing address
@@ -452,9 +437,9 @@ class KlarnaCheckout extends Module
                 return get_object_vars(
                     PaymentMethod::createForPaymentMethod(
                         $payment,
-                        $this->request->getSchemeAndHttpHost() . '/'
-                        . NativeCheckout::generateUrlForStep(NativeCheckout::STEP_PROCESS)
-                        . '?pay=' . $payment->getId()
+                        $this->request->getSchemeAndHttpHost().'/'
+                        .NativeCheckout::generateUrlForStep(NativeCheckout::STEP_PROCESS)
+                        .'?pay='.$payment->getId()
                     )
                 );
             },
@@ -472,7 +457,7 @@ class KlarnaCheckout extends Module
             return null;
         }
 
-        return Environment::get('url') . '/' . $page->getFrontendUrl();
+        return Environment::get('url').'/'.$page->getFrontendUrl();
     }
 
     /**
@@ -484,12 +469,12 @@ class KlarnaCheckout extends Module
     {
         $response = $e->getResponse();
 
-        $this->Template->gui = $GLOBALS['TL_LANG']['XPT']['error'] . '<br>';
-        $this->Template->gui .= 'Current time: ' . date('Y-m-d H:i:s') . '<br>';
-        if ($response !== null) {
-            $this->Template->gui .= 'Error code: ' . $response->getReasonPhrase();
+        $this->Template->gui = $GLOBALS['TL_LANG']['XPT']['error'].'<br>';
+        $this->Template->gui .= 'Current time: '.date('Y-m-d H:i:s').'<br>';
+        if (null !== $response) {
+            $this->Template->gui .= 'Error code: '.$response->getReasonPhrase();
         }
 
-        System::log('KCO error: ' . strip_tags($e->getMessage()), __METHOD__, TL_ERROR);
+        System::log('KCO error: '.strip_tags($e->getMessage()), __METHOD__, TL_ERROR);
     }
 }

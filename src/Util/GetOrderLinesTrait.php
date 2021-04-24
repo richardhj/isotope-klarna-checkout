@@ -1,25 +1,25 @@
 <?php
 
-/**
+declare(strict_types=1);
+
+/*
  * This file is part of richardhj/isotope-klarna-checkout.
  *
- * Copyright (c) 2018-2018 Richard Henkenjohann
+ * Copyright (c) 2018-2021 Richard Henkenjohann
  *
  * @package   richardhj/isotope-klarna-checkout
  * @author    Richard Henkenjohann <richardhenkenjohann@googlemail.com>
- * @copyright 2018-2018 Richard Henkenjohann
+ * @copyright 2018-2021 Richard Henkenjohann
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Util;
-
 
 use Contao\Model;
 use Isotope\Model\ProductCollection\Cart;
 
 trait GetOrderLinesTrait
 {
-
     /**
      * @var Cart|Model
      */
@@ -27,8 +27,6 @@ trait GetOrderLinesTrait
 
     /**
      * Return the items in the cart as api-conform array.
-     *
-     * @return array
      */
     private function orderLines(): array
     {
