@@ -106,7 +106,7 @@ final class ShippingOption
     {
         $this->id = $this->shipping->getId();
         $this->name = $this->shipping->getLabel();
-        $this->description = strip_tags($this->shipping->getNote());
+        $this->description = strip_tags((string) $this->shipping->getNote());
         $this->price = (int) round($this->shipping->getPrice() * 100, 0);
         $this->shipping_method = $this->shipping->klarna_shipping_method ?: self::METHOD_OWN;
 
