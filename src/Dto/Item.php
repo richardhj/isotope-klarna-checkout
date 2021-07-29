@@ -27,7 +27,7 @@ use Isotope\Model\ProductType;
 
 final class Item extends AbstractOrderLine
 {
-    public function __construct(ProductCollectionItem $item, IsotopeProductCollection $collection, int $taxRate = 0)
+    public function __construct(ProductCollectionItem $item, IsotopeProductCollection $collection, int $taxRate = null)
     {
         $this->reference = $item->getSku();
         $this->name = $item->getName();
@@ -37,20 +37,19 @@ final class Item extends AbstractOrderLine
         $this->unit_price = (int) round($item->getPrice() * 100);
         $this->total_amount = (int) round(($item->getTotalPrice() - $this->total_discount_amount / 100) * 100);
 
-        $this->tax_rate = $taxRate;
-
         $this->total_tax_amount = 0;
-        if (0 === $this->tax_rate) {
+        if (null === $taxRate) {
             // No distinct tax rate was found, maybe multiple taxes apply, simply calculate the tax_rate
             $taxFreePrice = (int) round($item->getTaxFreePrice() * 100);
             $price = (int) round($item->getPrice() * 100);
 
             if ($taxFreePrice > 0) {
                 $taxRate = ($price - $taxFreePrice) / $taxFreePrice;
-
-                $this->tax_rate = (int) round($taxRate * 100);
+                $taxRate = (int) round($taxRate * 100);
             }
         }
+
+        $this->tax_rate = $taxRate ?? 0;
 
         if (0 !== $this->tax_rate) {
             $this->total_tax_amount = (int) round($this->total_amount - $this->total_amount * 10000 / (10000 + $this->tax_rate));

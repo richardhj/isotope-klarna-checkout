@@ -158,83 +158,34 @@ class KlarnaCheckoutModuleController extends AbstractFrontendModuleController
             'purchase_currency' => $isoConfig->currency,
             'locale' => $request->getLocale(),
             'order_amount' => (int) round($cart->getTotal() * 100, 0),
-            'order_tax_amount' => (int) round(
-                ($cart->getTotal() - $cart->getTaxFreeTotal()) * 100,
-                0
-            ),
+            'order_tax_amount' => (int) round(($cart->getTotal() - $cart->getTaxFreeTotal()) * 100),
             'order_lines' => $this->apiClient->orderLines($cart),
             'merchant_urls' => [
                 'terms' => $this->uri($model->klarna_terms_page),
                 'cancellation_terms' => $this->uri($model->klarna_cancellation_terms_page),
                 'checkout' => $this->uri($model->klarna_checkout_page),
-                'confirmation' => sprintf(
-                    '%s?klarna_order_id={checkout.order.id}',
-                    $this->uri($model->klarna_confirmation_page)
-                ),
-                'push' => urldecode(
-                    $router->generate(
-                        'richardhj.klarna_checkout.push',
-                        ['orderId' => '{checkout.order.id}'],
-                        UrlGeneratorInterface::ABSOLUTE_URL
-                    )
-                ),
-                'shipping_option_update' => urldecode(
-                    $router->generate(
-                        'richardhj.klarna_checkout.callback.shipping_option_update',
-                        ['orderId' => '{checkout.order.id}'],
-                        UrlGeneratorInterface::ABSOLUTE_URL
-                    )
-                ),
-                'address_update' => urldecode(
-                    $router->generate(
-                        'richardhj.klarna_checkout.callback.address_update',
-                        ['orderId' => '{checkout.order.id}'],
-                        UrlGeneratorInterface::ABSOLUTE_URL
-                    )
-                ),
-                'country_change' => urldecode(
-                    $router->generate(
-                        'richardhj.klarna_checkout.callback.country_change',
-                        ['orderId' => '{checkout.order.id}'],
-                        UrlGeneratorInterface::ABSOLUTE_URL
-                    )
-                ),
-                'validation' => $router->generate(
-                    'richardhj.klarna_checkout.callback.order_validation',
-                    [],
-                    UrlGeneratorInterface::ABSOLUTE_URL
-                ),
+                'confirmation' => sprintf('%s?klarna_order_id={checkout.order.id}', $this->uri($model->klarna_confirmation_page)),
+                'push' => urldecode($router->generate('richardhj.klarna_checkout.push', ['orderId' => '{checkout.order.id}'], UrlGeneratorInterface::ABSOLUTE_URL)),
+                'shipping_option_update' => urldecode($router->generate('richardhj.klarna_checkout.callback.shipping_option_update', ['orderId' => '{checkout.order.id}'], UrlGeneratorInterface::ABSOLUTE_URL)),
+                'address_update' => urldecode($router->generate('richardhj.klarna_checkout.callback.address_update', ['orderId' => '{checkout.order.id}'], UrlGeneratorInterface::ABSOLUTE_URL)),
+                'country_change' => urldecode($router->generate('richardhj.klarna_checkout.callback.country_change', ['orderId' => '{checkout.order.id}'], UrlGeneratorInterface::ABSOLUTE_URL)),
+                'validation' => $router->generate('richardhj.klarna_checkout.callback.order_validation', [], UrlGeneratorInterface::ABSOLUTE_URL),
             ],
             'billing_address' => $billingAddress,
             'shipping_address' => $shippingAddress,
-            'shipping_options' => $this->apiClient->shippingOptions($cart,
-                StringUtil::deserialize($model->iso_shipping_modules, true)
-            ),
+            'shipping_options' => $this->apiClient->shippingOptions($cart, StringUtil::deserialize($model->iso_shipping_modules, true)),
             'shipping_countries' => $isoConfig->getShippingCountries() ?: null,
             'billing_countries' => $isoConfig->getBillingCountries() ?: null,
             'external_payment_methods' => $this->externalPaymentMethods($model, $request),
             'options' => [
                 'allow_separate_shipping_address' => [] !== $isoConfig->getShippingFields(),
-                'color_button' => $model->klarna_color_button
-                    ? '#'.$model->klarna_color_button
-                    : null,
-                'color_button_text' => $model->klarna_color_button_text
-                    ? '#'.$model->klarna_color_button_text
-                    : null,
-                'color_checkbox' => $model->klarna_color_checkbox
-                    ? '#'.$model->klarna_color_checkbox
-                    : null,
-                'color_checkbox_checkmark' => $model->klarna_color_checkbox_checkmark
-                    ? '#'.$model->klarna_color_checkbox_checkmark
-                    : null,
-                'color_header' => $model->klarna_color_header
-                    ? '#'.$model->klarna_color_header
-                    : null,
-                'color_link' => $model->klarna_color_link
-                    ? '#'.$model->klarna_color_link
-                    : null,
-                'allowed_customer_types' => $companyConfig && $companyConfig['mandatory'] ? ['organization'] :
-                    ($companyConfig && $companyConfig['enabled'] ? ['organization', 'person'] : ['person']),
+                'color_button' => $model->klarna_color_button ? '#'.$model->klarna_color_button : null,
+                'color_button_text' => $model->klarna_color_button_text ? '#'.$model->klarna_color_button_text : null,
+                'color_checkbox' => $model->klarna_color_checkbox ? '#'.$model->klarna_color_checkbox : null,
+                'color_checkbox_checkmark' => $model->klarna_color_checkbox_checkmark ? '#'.$model->klarna_color_checkbox_checkmark : null,
+                'color_header' => $model->klarna_color_header ? '#'.$model->klarna_color_header : null,
+                'color_link' => $model->klarna_color_link ? '#'.$model->klarna_color_link : null,
+                'allowed_customer_types' => $companyConfig && $companyConfig['mandatory'] ? ['organization'] : ($companyConfig && $companyConfig['enabled'] ? ['organization', 'person'] : ['person']),
                 'require_validate_callback_success' => true,
                 'show_subtotal_detail' => (bool) $model->klarna_show_subtotal_detail,
             ],

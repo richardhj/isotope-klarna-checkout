@@ -153,40 +153,37 @@ class ApiClient
         ];
     }
 
-    private function estimateTaxRate(ProductCollectionItem $item): int
+    private function estimateTaxRate(ProductCollectionItem $item): ?int
     {
-        try {
+        $taxRate = $this->connection->createQueryBuilder()
+            ->select('tax_rate.rate')
+            ->from('tl_iso_tax_rate', 'tax_rate')
+            ->innerJoin('tax_rate', 'tl_iso_tax_class', 'tax_class', 'tax_class.includes = tax_rate.id')
+            ->where('tax_class.id = :tax_id')
+            ->setParameter('tax_id', $item->tax_id)
+            ->execute()
+            ->fetchOne()
+        ;
+
+        if (false === $taxRate) {
             $taxRate = $this->connection->createQueryBuilder()
                 ->select('tax_rate.rate')
-                ->from('tl_iso_tax_rate', 'tax_rate')
-                ->innerJoin('tax_rate', 'tl_iso_tax_class', 'tax_class', 'tax_class.includes = tax_rate.id')
-                ->where('tax_class.id = :tax_id')
-                ->setParameter('tax_id', $item->tax_id)
+                ->from('tl_iso_product_price', 'price')
+                ->innerJoin('price', 'tl_iso_tax_class', 'tax_class', 'price.tax_class = tax_class.id')
+                ->innerJoin('tax_class', 'tl_iso_tax_rate', 'tax_rate', 'tax_class.includes = tax_rate.id')
+                ->where('price.pid = :product_id')
+                ->setParameter('product_id', $item->product_id)
                 ->execute()
-                ->fetchColumn();
-
-            if (false === $taxRate) {
-                $taxRate = $this->connection->createQueryBuilder()
-                    ->select('tax_rate.rate')
-                    ->from('tl_iso_product_price', 'price')
-                    ->innerJoin('price', 'tl_iso_tax_class', 'tax_class', 'price.tax_class = tax_class.id')
-                    ->innerJoin('tax_class', 'tl_iso_tax_rate', 'tax_rate', 'tax_class.includes = tax_rate.id')
-                    ->where('price.pid = :product_id')
-                    ->setParameter('product_id', $item->product_id)
-                    ->execute()
-                    ->fetchColumn();
-            }
-
-            if (false === $taxRate) {
-                return 0;
-            }
-
-            $rate = StringUtil::deserialize($taxRate, true);
-
-            return (int) round($rate['value'] * 100);
-        } catch (\Exception $e) {
+                ->fetchOne()
+            ;
         }
 
-        return 0;
+        if (false === $taxRate) {
+            return null;
+        }
+
+        $rate = StringUtil::deserialize($taxRate, true);
+
+        return (int) round($rate['value'] * 100);
     }
 }

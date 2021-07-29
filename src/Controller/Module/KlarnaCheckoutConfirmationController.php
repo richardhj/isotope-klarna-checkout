@@ -102,14 +102,14 @@ class KlarnaCheckoutConfirmationController extends AbstractFrontendModuleControl
 
         // Update billing address
         $address = $isotopeOrder->getBillingAddress() ?? Address::createForProductCollection($isotopeOrder);
-        $address = $this->updateAddressByApiResponse($address, $billingAddress);
+        $address = $this->apiClient->updateAddressByApiResponse($address, $billingAddress);
 
         $isotopeOrder->setBillingAddress($address);
 
         // Update shipping address
         if ($shippingAddress !== $billingAddress) {
             $address = $isotopeOrder->getShippingAddress() ?? Address::createForProductCollection($isotopeOrder);
-            $address = $this->updateAddressByApiResponse($address, $shippingAddress);
+            $address = $this->apiClient->updateAddressByApiResponse($address, $shippingAddress);
         }
         $isotopeOrder->setShippingAddress($address);
 
