@@ -33,20 +33,19 @@ final class Item extends AbstractOrderLine
         $this->name = $item->getName();
         $this->quantity = (int) $item->quantity;
 
-        $this->addTotalDiscountAmountForItem($collection->getSurcharges(), $item);
+        $this->addTotalDiscountAmount($collection->getSurcharges(), $item);
         $this->unit_price = (int) round($item->getPrice() * 100);
         $this->total_amount = (int) round(($item->getTotalPrice() - $this->total_discount_amount / 100) * 100);
 
-        $this->total_tax_amount = 0;
-        if (null === $taxRate) {
-            // No distinct tax rate was found, maybe multiple taxes apply, simply calculate the tax_rate
-            $taxFreePrice = (int) round($item->getTaxFreePrice() * 100);
-            $price = (int) round($item->getPrice() * 100);
+        $taxFreePrice = (int) round($item->getTaxFreePrice() * 100);
+        $price = (int) round($item->getPrice() * 100);
 
-            if ($taxFreePrice > 0) {
-                $taxRate = ($price - $taxFreePrice) / $taxFreePrice;
-                $taxRate = (int) round($taxRate * 100);
-            }
+        $this->total_tax_amount = $price - $taxFreePrice;
+
+        // No distinct tax rate was found, maybe multiple taxes apply, simply calculate the tax_rate
+        if (null === $taxRate && $taxFreePrice > 0) {
+            $taxRate = ($price - $taxFreePrice) / $taxFreePrice;
+            $taxRate = (int) round($taxRate * 100);
         }
 
         $this->tax_rate = $taxRate ?? 0;
@@ -55,12 +54,12 @@ final class Item extends AbstractOrderLine
             $this->total_tax_amount = (int) round($this->total_amount - $this->total_amount * 10000 / (10000 + $this->tax_rate));
         }
 
-        $this->addTypeForItem($item);
+        $this->addType($item);
         $this->addProductUrl($item);
         $this->addImageUrl($item);
     }
 
-    private function addTypeForItem(ProductCollectionItem $item)
+    private function addType(ProductCollectionItem $item)
     {
         $this->type = self::TYPE_PHYSICAL;
 
@@ -107,9 +106,9 @@ final class Item extends AbstractOrderLine
     /**
      * Add total_discount_amount by walking through the surcharges.
      */
-    private function addTotalDiscountAmountForItem(array $surcharges, ProductCollectionItem $item): void
+    private function addTotalDiscountAmount(array $surcharges, ProductCollectionItem $item): void
     {
-        foreach ((array) $surcharges as $surcharge) {
+        foreach ($surcharges as $surcharge) {
             if (!$surcharge instanceof Rule || ('cart' === $surcharge->type && 'subtotal' === $surcharge->applyTo)) {
                 continue;
             }
