@@ -13,11 +13,6 @@ declare(strict_types=1);
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
-use Richardhj\IsotopeKlarnaCheckoutBundle\Module\KlarnaCheckout;
-use Richardhj\IsotopeKlarnaCheckoutBundle\Module\KlarnaCheckoutConfirmation;
+use Richardhj\IsotopeKlarnaCheckoutBundle\HookListener\FindSurchargesForCollectionListener;
 
-$GLOBALS['FE_MOD']['isotope']['iso_klarna_checkout'] = KlarnaCheckout::class;
-$GLOBALS['FE_MOD']['isotope']['iso_klarna_checkout_confirmation'] = KlarnaCheckoutConfirmation::class;
-
-$GLOBALS['ISO_HOOKS']['findSurchargesForCollection'][] =
-    ['richardhj.klarna_checkout.hook_listener.find_surcharges_for_collection', 'findShippingAndPaymentSurcharges'];
+$GLOBALS['ISO_HOOKS']['findSurchargesForCollection'][] = [FindSurchargesForCollectionListener::class, 'findShippingAndPaymentSurcharges'];

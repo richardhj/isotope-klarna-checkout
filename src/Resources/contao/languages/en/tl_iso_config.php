@@ -16,7 +16,7 @@ declare(strict_types=1);
 $GLOBALS['TL_LANG']['tl_iso_config']['klarna_legend'] = 'Klarna';
 
 $GLOBALS['TL_LANG']['tl_iso_config']['use_klarna'][0] = 'Use Klarna';
-$GLOBALS['TL_LANG']['tl_iso_config']['use_klarna'][1] = 'Enable Klarna Checkout v3 support for this shop configuration.';
+$GLOBALS['TL_LANG']['tl_iso_config']['use_klarna'][1] = 'Enable Klarna Checkout support for this shop configuration.';
 $GLOBALS['TL_LANG']['tl_iso_config']['klarna_api_username'][0] = 'Klarna API username';
 $GLOBALS['TL_LANG']['tl_iso_config']['klarna_api_username'][1] = 'Enter the API username that you can generate within the Klarna merchant portal.';
 $GLOBALS['TL_LANG']['tl_iso_config']['klarna_api_password'][0] = 'Klarna API password';

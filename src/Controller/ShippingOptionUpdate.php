@@ -19,42 +19,40 @@ use Contao\Model;
 use Isotope\Isotope;
 use Isotope\Model\ProductCollection\Cart;
 use Isotope\Model\Shipping;
-use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class ShippingOptionUpdate
 {
-    use GetOrderLinesTrait;
-
     /**
      * Will be called whenever the consumer selects a shipping option.
      * The response will contain the updated order_lines due of added shipping_fee.
      *
      * @param mixed $orderId
      */
-    public function __invoke($orderId, Request $request): Response
+    public function __invoke($orderId, Request $request, ApiClient $apiClient): Response
     {
         $data = json_decode($request->getContent());
         if (null === $data) {
             return new Response('Bad Request', Response::HTTP_BAD_REQUEST);
         }
 
-        /* @var Cart|Model $cart */
-        $this->cart = Cart::findOneBy('klarna_order_id', $orderId);
+        /** @var Cart|Model $cart */
+        $cart = Cart::findOneBy('klarna_order_id', $orderId);
 
         $shippingMethod = Shipping::findById($data->selected_shipping_option->id);
-        $this->cart->setShippingMethod($shippingMethod);
-        $this->cart->save();
+        $cart->setShippingMethod($shippingMethod);
+        $cart->save();
 
         // Set cart to prevent errors within the Isotope logic.
-        Isotope::setCart($this->cart);
+        Isotope::setCart($cart);
 
         // Update order with updated shipping method
-        $data->order_amount = $this->cart->getTotal() * 100;
-        $data->order_tax_amount = ($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100;
-        $data->order_lines = $this->orderLines();
+        $data->order_amount = round($cart->getTotal() * 100);
+        $data->order_tax_amount = round(($cart->getTotal() - $cart->getTaxFreeTotal()) * 100);
+        $data->order_lines = $apiClient->orderLines($cart);
 
         return new JsonResponse($data);
     }

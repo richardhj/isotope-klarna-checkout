@@ -13,7 +13,7 @@ declare(strict_types=1);
  * @license   https://github.com/richardhj/isotope-klarna-checkout/blob/master/LICENSE LGPL-3.0
  */
 
-use Richardhj\IsotopeKlarnaCheckoutBundle\Util\ShippingOption;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Dto\ShippingOption;
 
 $GLOBALS['TL_DCA']['tl_iso_shipping']['palettes']['flat'] .= ';{klarna_legend},klarna_shipping_method';
 

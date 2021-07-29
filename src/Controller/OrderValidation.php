@@ -16,18 +16,16 @@ declare(strict_types=1);
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 use Contao\System;
+use Isotope\Interfaces\IsotopeOrderableCollection;
 use Isotope\Isotope;
 use Isotope\Model\ProductCollection\Cart as IsotopeCart;
 use Isotope\Model\ProductCollection\Order as IsotopeOrder;
-use Richardhj\IsotopeKlarnaCheckoutBundle\Util\CanCheckoutTrait;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class OrderValidation
 {
-    use CanCheckoutTrait;
-
     /**
      * Will be called before completing the purchase to validate the information provided by the consumer in Klarna's
      * Checkout iframe.
@@ -40,8 +38,8 @@ class OrderValidation
             return new Response('Bad Request', Response::HTTP_BAD_REQUEST);
         }
 
-        $this->cart = IsotopeCart::findOneBy('klarna_order_id', $data->order_id);
-        Isotope::setCart($this->cart);
+        $cart = IsotopeCart::findOneBy('klarna_order_id', $data->order_id);
+        Isotope::setCart($cart);
 
         // Set the correct locale, see #7.
         $GLOBALS['TL_LANGUAGE'] = $data->locale;
@@ -60,11 +58,11 @@ class OrderValidation
         }
 
         // Create order
-        $isotopeOrder = $this->cart->getDraftOrder();
+        $isotopeOrder = $cart->getDraftOrder();
 
         $isotopeOrder->klarna_order_id = $data->order_id;
 
-        if (false === $this->checkPreCheckoutHook($isotopeOrder) || false === $this->canCheckout()) {
+        if (false === $this->checkPreCheckoutHook($isotopeOrder) || false === $this->canCheckout($cart)) {
             return new JsonResponse([
                 'error_type' => 'address_error',
                 //'error_text' => $this->translator->trans('ERR.orderFailed', null, $data->locale),
@@ -98,5 +96,13 @@ class OrderValidation
 
         // Don't cancel the order per default.
         return true;
+    }
+
+    /**
+     * Check if the checkout can be executed.
+     */
+    private function canCheckout(IsotopeOrderableCollection $cart): bool
+    {
+        return false === $cart->isEmpty() && false === $cart->hasErrors();
     }
 }

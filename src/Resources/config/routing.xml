@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<routes xmlns="http://symfony.com/schema/routing"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://symfony.com/schema/routing
+        https://symfony.com/schema/routing/routing-1.0.xsd">
+
+    <route id="richardhj.klarna_checkout.push" path="/kco/push/{orderId}"
+           controller="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Push"/>
+    <route id="richardhj.klarna_checkout.callback.address_update" path="/kco/callback/address_update/{orderId}"
+           controller="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\AddressUpdate"/>
+    <route id="richardhj.klarna_checkout.callback.country_change" path="/kco/callback/country_change/{orderId}"
+           controller="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\CountryChange"/>
+    <route id="richardhj.klarna_checkout.callback.shipping_option_update" path="/kco/callback/shipping_option_update/{orderId}"
+           controller="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\ShippingOptionUpdate"/>
+    <route id="richardhj.klarna_checkout.callback.order_validation" path="/kco/callback/validate"
+           controller="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\OrderValidation"/>
+</routes>

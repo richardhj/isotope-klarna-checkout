@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        https://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient">
+            <argument type="service" id="serializer"/>
+            <argument type="service" id="database_connection"/>
+        </service>
+
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Module\KlarnaCheckoutModuleController">
+            <argument type="service" id="Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient"/>
+        </service>
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Module\KlarnaCheckoutConfirmationController">
+            <argument type="service" id="Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient"/>
+        </service>
+
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Push"/>
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\AddressUpdate"/>
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\CountryChange"/>
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\ShippingOptionUpdate"/>
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\OrderValidation"/>
+
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\HookListener\FindSurchargesForCollectionListener" public="true"/>
+
+    </services>
+</container>

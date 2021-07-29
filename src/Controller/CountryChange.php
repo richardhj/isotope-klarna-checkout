@@ -19,19 +19,13 @@ use Contao\ModuleModel;
 use Contao\StringUtil;
 use Isotope\Isotope;
 use Isotope\Model\ProductCollection\Cart;
-use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetOrderLinesTrait;
-use Richardhj\IsotopeKlarnaCheckoutBundle\Util\GetShippingOptionsTrait;
-use Richardhj\IsotopeKlarnaCheckoutBundle\Util\UpdateAddressTrait;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class CountryChange
 {
-    use GetOrderLinesTrait;
-    use GetShippingOptionsTrait;
-    use UpdateAddressTrait;
-
     /**
      * Will be called whenever the consumer changes billing address country. Time to update shipping, tax and purchase
      * currency.
@@ -39,7 +33,7 @@ class CountryChange
      *
      * @param mixed $orderId
      */
-    public function __invoke($orderId, Request $request): Response
+    public function __invoke($orderId, Request $request, ApiClient $client): Response
     {
         $data = json_decode($request->getContent());
         if (null === $data) {
@@ -49,8 +43,8 @@ class CountryChange
         $billingAddress = $data->billing_address;
         $billingCountry = $billingAddress->country;
 
-        $this->cart = Cart::findOneBy('klarna_order_id', $orderId);
-        $config = $this->cart->getConfig();
+        $cart = Cart::findOneBy('klarna_order_id', $orderId);
+        $config = $cart->getConfig();
         if (null === $config) {
             return new JsonResponse(['error_type' => 'unsupported_shipping_address'], Response::HTTP_BAD_REQUEST);
         }
@@ -62,39 +56,39 @@ class CountryChange
 
         $billingAddress = $data->billing_address;
         $shippingAddress = $data->shipping_address;
-        $checkoutModule = ModuleModel::findById($this->cart->klarna_checkout_module);
+        $checkoutModule = ModuleModel::findById($cart->klarna_checkout_module);
         if (null === $checkoutModule) {
             return new JsonResponse(['error_type' => 'unsupported_shipping_address'], Response::HTTP_BAD_REQUEST);
         }
 
         // Set billing address
-        $address = $this->cart->getBillingAddress();
-        $address = $this->updateAddressByApiResponse($address, (array) $billingAddress);
+        $address = $cart->getBillingAddress();
+        $address = $client->updateAddressByApiResponse($address, (array) $billingAddress);
 
-        $this->cart->setBillingAddress($address);
+        $cart->setBillingAddress($address);
 
         // Set shipping address
-        $address = $this->cart->getShippingAddress();
-        $address = $this->updateAddressByApiResponse($address, (array) $shippingAddress);
+        $address = $cart->getShippingAddress();
+        $address = $client->updateAddressByApiResponse($address, (array) $shippingAddress);
 
-        $this->cart->setShippingAddress($address);
+        $cart->setShippingAddress($address);
 
-        $this->cart->save();
+        $cart->save();
 
         // Set cart to prevent errors within the Isotope logic.
-        Isotope::setCart($this->cart);
+        Isotope::setCart($cart);
 
         // Since we updated the shipping address, now we can fetch the current shipping methods.
-        $shippingOptions = $this->shippingOptions(StringUtil::deserialize($checkoutModule->iso_shipping_modules, true));
+        $shippingOptions = $client->shippingOptions($cart, StringUtil::deserialize($checkoutModule->iso_shipping_modules, true));
         if ([] === $shippingOptions) {
             return new JsonResponse(['error_type' => 'unsupported_shipping_address'], Response::HTTP_BAD_REQUEST);
         }
 
         // Update order since shipping method may get updated
         $data->shipping_options = $shippingOptions;
-        $data->order_amount = (int) round($this->cart->getTotal() * 100, 0);
-        $data->order_tax_amount = (int) round(($this->cart->getTotal() - $this->cart->getTaxFreeTotal()) * 100, 0);
-        $data->order_lines = $this->orderLines();
+        $data->order_amount = (int) round($cart->getTotal() * 100);
+        $data->order_tax_amount = (int) round(($cart->getTotal() - $cart->getTaxFreeTotal()) * 100);
+        $data->order_lines = $client->orderLines($cart);
 
         return new JsonResponse($data);
     }

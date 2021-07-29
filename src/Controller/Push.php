@@ -16,9 +16,7 @@ declare(strict_types=1);
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 use Isotope\Model\ProductCollection\Order as IsotopeOrder;
-use Klarna\Rest\OrderManagement\Order as KlarnaOrder;
-use Klarna\Rest\Transport\Connector as KlarnaConnector;
-use Klarna\Rest\Transport\ConnectorInterface;
+use Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -30,7 +28,7 @@ class Push
      *
      * @param mixed $orderId
      */
-    public function __invoke($orderId, Request $request): Response
+    public function __invoke($orderId, Request $request, ApiClient $apiClient): Response
     {
         $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $orderId);
         if (null === $isotopeOrder) {
@@ -42,26 +40,19 @@ class Push
             return new Response('Klarna is not configured in the Isotope config.', Response::HTTP_BAD_REQUEST);
         }
 
-        $apiUsername = $config->klarna_api_username;
-        $apiPassword = $config->klarna_api_password;
-        $connector = KlarnaConnector::create(
-            $apiUsername,
-            $apiPassword,
-            $config->klarna_api_test ? ConnectorInterface::EU_TEST_BASE_URL : ConnectorInterface::EU_BASE_URL
-        );
+        $client = $apiClient->httpClient($config);
 
-        $klarnaOrder = new KlarnaOrder($connector, $orderId);
         if (!$isotopeOrder->isCheckoutComplete()) {
-            $klarnaOrder->cancel();
+            $client->request('POST', '/ordermanagement/v1/orders/'.$orderId.'/cancel');
 
             return new Response('', Response::HTTP_NO_CONTENT);
         }
 
-        $klarnaOrder->acknowledge();
-        $klarnaOrder->updateMerchantReferences([
+        $client->request('POST', '/ordermanagement/v1/orders/'.$orderId.'/acknowledge');
+        $client->request('PATCH', '/ordermanagement/v1/orders/'.$orderId.'/merchant-references', ['json' => [
             'merchant_reference1' => $isotopeOrder->getDocumentNumber(),
             'merchant_reference2' => $isotopeOrder->getUniqueId(),
-        ]);
+        ]]);
 
         return new Response('', Response::HTTP_NO_CONTENT);
     }

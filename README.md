@@ -1,4 +1,4 @@
-# Klarna Checkout v3 for Isotope eCommerce
+# Klarna Checkout for Isotope eCommerce
 
 [![Latest Version on Packagist][ico-version]][link-packagist]
 [![Software License][ico-license]](LICENSE)
@@ -32,7 +32,7 @@ the native Isotope checkout module.
 completed. This modules displays a confirmation iFrame (order review) and finishes the order in Isotope.
 
 This checkout also supports [External Payment Modules][link-klarna-api-external-payment]. You can enable any payment
-method you are already using (e.g. PayPal) and it should work as well! Note that for such orders the order confirmation
+method you are already using (e.g., PayPal) and it should work as well! Note that for such orders the order confirmation
 will differ (no Klarna iFrame).
 
 ## Who did it?
