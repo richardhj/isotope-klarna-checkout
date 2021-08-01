@@ -57,9 +57,8 @@ class ApiClient
     public function orderLines(?Cart $cart): array
     {
         $orderLines = [];
-
         if (null === $cart) {
-            return [];
+            return $orderLines;
         }
 
         foreach ($cart->getItems() as $item) {

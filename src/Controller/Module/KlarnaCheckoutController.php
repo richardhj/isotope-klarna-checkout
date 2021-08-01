@@ -47,7 +47,7 @@ use Symfony\Component\Routing\RouterInterface;
 /**
  * @FrontendModule("iso_klarna_checkout", category="isotope", template="mod_klarna_checkout")
  */
-class KlarnaCheckoutModuleController extends AbstractFrontendModuleController
+class KlarnaCheckoutController extends AbstractFrontendModuleController
 {
     private ApiClient $apiClient;
 
@@ -151,7 +151,7 @@ class KlarnaCheckoutModuleController extends AbstractFrontendModuleController
         $router = System::getContainer()->get('router');
 
         $billingFieldsConfig = $isoConfig->getBillingFieldsConfig();
-        $companyConfig = array_filter($billingFieldsConfig, static function (array $c) {return 'company' === $c['value']; })[0] ?? [];
+        $companyConfig = array_filter($billingFieldsConfig, fn (array $c) => 'company' === $c['value'])[0] ?? [];
 
         return [
             'purchase_country' => $isoConfig->country,
@@ -248,8 +248,6 @@ class KlarnaCheckoutModuleController extends AbstractFrontendModuleController
                 $template->gui = $processPayment;
 
                 return;
-
-                break;
 
             case 'process':
                 $isotopeOrder = $isoCart->getDraftOrder();

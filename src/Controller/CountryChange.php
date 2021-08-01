@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
+use Contao\CoreBundle\Controller\AbstractController;
 use Contao\ModuleModel;
 use Contao\StringUtil;
 use Isotope\Isotope;
@@ -24,8 +25,15 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class CountryChange
+class CountryChange extends AbstractController
 {
+    private ApiClient $client;
+
+    public function __construct(ApiClient $client)
+    {
+        $this->client = $client;
+    }
+
     /**
      * Will be called whenever the consumer changes billing address country. Time to update shipping, tax and purchase
      * currency.
@@ -33,12 +41,14 @@ class CountryChange
      *
      * @param mixed $orderId
      */
-    public function __invoke($orderId, Request $request, ApiClient $client): Response
+    public function __invoke($orderId, Request $request): Response
     {
         $data = json_decode($request->getContent());
         if (null === $data) {
             return new Response('Bad Request', Response::HTTP_BAD_REQUEST);
         }
+
+        $this->initializeContaoFramework();
 
         $billingAddress = $data->billing_address;
         $billingCountry = $billingAddress->country;
@@ -63,13 +73,13 @@ class CountryChange
 
         // Set billing address
         $address = $cart->getBillingAddress();
-        $address = $client->updateAddressByApiResponse($address, (array) $billingAddress);
+        $address = $this->client->updateAddressByApiResponse($address, (array) $billingAddress);
 
         $cart->setBillingAddress($address);
 
         // Set shipping address
         $address = $cart->getShippingAddress();
-        $address = $client->updateAddressByApiResponse($address, (array) $shippingAddress);
+        $address = $this->client->updateAddressByApiResponse($address, (array) $shippingAddress);
 
         $cart->setShippingAddress($address);
 
@@ -79,7 +89,7 @@ class CountryChange
         Isotope::setCart($cart);
 
         // Since we updated the shipping address, now we can fetch the current shipping methods.
-        $shippingOptions = $client->shippingOptions($cart, StringUtil::deserialize($checkoutModule->iso_shipping_modules, true));
+        $shippingOptions = $this->client->shippingOptions($cart, StringUtil::deserialize($checkoutModule->iso_shipping_modules, true));
         if ([] === $shippingOptions) {
             return new JsonResponse(['error_type' => 'unsupported_shipping_address'], Response::HTTP_BAD_REQUEST);
         }
@@ -88,7 +98,7 @@ class CountryChange
         $data->shipping_options = $shippingOptions;
         $data->order_amount = (int) round($cart->getTotal() * 100);
         $data->order_tax_amount = (int) round(($cart->getTotal() - $cart->getTaxFreeTotal()) * 100);
-        $data->order_lines = $client->orderLines($cart);
+        $data->order_lines = $this->client->orderLines($cart);
 
         return new JsonResponse($data);
     }

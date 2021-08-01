@@ -5,23 +5,38 @@
         https://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
+        <defaults autoconfigure="true"/>
+
+        <instanceof id="Symfony\Bundle\FrameworkBundle\Controller\AbstractController">
+            <call method="setContainer">
+                <argument type="service" id="Psr\Container\ContainerInterface"/>
+            </call>
+        </instanceof>
 
         <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient">
             <argument type="service" id="serializer"/>
             <argument type="service" id="database_connection"/>
         </service>
 
-        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Module\KlarnaCheckoutModuleController">
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Module\KlarnaCheckoutController">
             <argument type="service" id="Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient"/>
         </service>
         <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Module\KlarnaCheckoutConfirmationController">
             <argument type="service" id="Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient"/>
         </service>
 
-        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Push"/>
-        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\AddressUpdate"/>
-        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\CountryChange"/>
-        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\ShippingOptionUpdate"/>
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\Push">
+            <argument type="service" id="Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient"/>
+        </service>
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\AddressUpdate">
+            <argument type="service" id="Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient"/>
+        </service>
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\CountryChange">
+            <argument type="service" id="Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient"/>
+        </service>
+        <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\ShippingOptionUpdate">
+            <argument type="service" id="Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient"/>
+        </service>
         <service id="Richardhj\IsotopeKlarnaCheckoutBundle\Controller\OrderValidation"/>
 
         <service id="Richardhj\IsotopeKlarnaCheckoutBundle\HookListener\FindSurchargesForCollectionListener" public="true"/>

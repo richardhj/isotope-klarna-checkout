@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
+use Contao\CoreBundle\Controller\AbstractController;
 use Contao\System;
 use Isotope\Interfaces\IsotopeOrderableCollection;
 use Isotope\Isotope;
@@ -24,7 +25,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class OrderValidation
+class OrderValidation extends AbstractController
 {
     /**
      * Will be called before completing the purchase to validate the information provided by the consumer in Klarna's
@@ -37,6 +38,8 @@ class OrderValidation
         if (null === $data) {
             return new Response('Bad Request', Response::HTTP_BAD_REQUEST);
         }
+
+        $this->initializeContaoFramework();
 
         $cart = IsotopeCart::findOneBy('klarna_order_id', $data->order_id);
         Isotope::setCart($cart);

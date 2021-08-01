@@ -15,21 +15,31 @@ declare(strict_types=1);
 
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
+use Contao\CoreBundle\Controller\AbstractController;
 use Isotope\Model\ProductCollection\Order as IsotopeOrder;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class Push
+class Push extends AbstractController
 {
+    private ApiClient $client;
+
+    public function __construct(ApiClient $client)
+    {
+        $this->client = $client;
+    }
+
     /**
      * Will be called post checkout, approximately 2 minutes after the user have been displayed the checkout
      * confirmation. This controller will i.a. complete the order and trigger the notifications.
      *
      * @param mixed $orderId
      */
-    public function __invoke($orderId, Request $request, ApiClient $apiClient): Response
+    public function __invoke($orderId, Request $request): Response
     {
+        $this->initializeContaoFramework();
+
         $isotopeOrder = IsotopeOrder::findOneBy('klarna_order_id', $orderId);
         if (null === $isotopeOrder) {
             return new Response('Order not found: '.$orderId, Response::HTTP_NOT_FOUND);
@@ -40,7 +50,7 @@ class Push
             return new Response('Klarna is not configured in the Isotope config.', Response::HTTP_BAD_REQUEST);
         }
 
-        $client = $apiClient->httpClient($config);
+        $client = $this->client->httpClient($config);
 
         if (!$isotopeOrder->isCheckoutComplete()) {
             $client->request('POST', '/ordermanagement/v1/orders/'.$orderId.'/cancel');
