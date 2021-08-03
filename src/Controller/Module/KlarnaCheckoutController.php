@@ -119,7 +119,13 @@ class KlarnaCheckoutController extends AbstractFrontendModuleController
                 'json' => $this->klarnaOrderData($user, $isoConfig, $request, $model, $isoCart),
             ]);
 
-            $klarnaOrder = $response->toArray();
+            try {
+                $klarnaOrder = $response->toArray();
+            } catch (ClientException$e) {
+                $template->gui = 'An error occured';
+
+                return $template->getResponse();
+            }
 
             $isoCart->klarna_checkout_module = $model->id;
         }
