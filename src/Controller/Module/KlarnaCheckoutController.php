@@ -163,7 +163,7 @@ class KlarnaCheckoutController extends AbstractFrontendModuleController
             'purchase_country' => $isoConfig->country,
             'purchase_currency' => $isoConfig->currency,
             'locale' => $request->getLocale(),
-            'order_amount' => (int) round($cart->getTotal() * 100, 0),
+            'order_amount' => (int) round($cart->getTotal() * 100),
             'order_tax_amount' => (int) round(($cart->getTotal() - $cart->getTaxFreeTotal()) * 100),
             'order_lines' => $this->apiClient->orderLines($cart),
             'merchant_urls' => [

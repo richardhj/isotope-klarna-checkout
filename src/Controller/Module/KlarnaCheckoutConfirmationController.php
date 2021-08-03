@@ -26,6 +26,7 @@ use Isotope\Model\Address;
 use Isotope\Model\ProductCollection\Order as IsotopeOrder;
 use Isotope\Model\Shipping;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Api\ApiClient;
+use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -64,7 +65,7 @@ class KlarnaCheckoutConfirmationController extends AbstractFrontendModuleControl
 
         try {
             $klarnaOrder = $response->toArray();
-        } catch (\Symfony\Component\HttpClient\Exception\ClientException $e) {
+        } catch (ClientException $e) {
             $response = $e->getResponse();
             if (404 === $response->getStatusCode()) {
                 throw new PageNotFoundException('Klarna order not found: ID '.$orderId);
