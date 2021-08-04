@@ -40,19 +40,25 @@ final class Item extends AbstractOrderLine
         $taxFreePrice = (int) round($item->getTaxFreePrice() * 100);
         $price = (int) round($item->getPrice() * 100);
 
-        $this->total_tax_amount = $price - $taxFreePrice;
+        if (null !== $taxRate) {
+            if ($price > $taxFreePrice) {
+                // Taxes are included in the price
+                $this->total_tax_amount = (int) round($this->total_amount - $this->total_amount * 10000 / (10000 + $taxRate));
+            } else {
+                // Taxes are added as surcharge
+                $taxRate = 0;
+            }
+        }
 
         // No distinct tax rate was found, maybe multiple taxes apply, simply calculate the tax_rate
         if (null === $taxRate && $taxFreePrice > 0) {
             $taxRate = ($price - $taxFreePrice) / $taxFreePrice;
             $taxRate = (int) round($taxRate * 100);
+
+            $this->total_tax_amount = $price - $taxFreePrice;
         }
 
-        $this->tax_rate = $taxRate ?? 0;
-
-        if (0 !== $this->tax_rate) {
-            $this->total_tax_amount = (int) round($this->total_amount - $this->total_amount * 10000 / (10000 + $this->tax_rate));
-        }
+        $this->tax_rate = $taxRate;
 
         $this->addType($item);
         $this->addProductUrl($item);
