@@ -16,11 +16,15 @@ declare(strict_types=1);
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Controller;
 
 use Contao\CoreBundle\Controller\AbstractController;
+use Contao\Module;
+use Contao\ModuleModel;
 use Contao\System;
 use Isotope\Interfaces\IsotopeOrderableCollection;
 use Isotope\Isotope;
+use Isotope\Model\ProductCollection\Cart;
 use Isotope\Model\ProductCollection\Cart as IsotopeCart;
 use Isotope\Model\ProductCollection\Order as IsotopeOrder;
+use Isotope\Module\Checkout as CheckoutModule;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -41,6 +45,7 @@ class OrderValidation extends AbstractController
 
         $this->initializeContaoFramework();
 
+        /** @var Cart&Module $cart */
         $cart = IsotopeCart::findOneBy('klarna_order_id', $data->order_id);
         Isotope::setCart($cart);
 
@@ -65,7 +70,7 @@ class OrderValidation extends AbstractController
 
         $isotopeOrder->klarna_order_id = $data->order_id;
 
-        if (false === $this->checkPreCheckoutHook($isotopeOrder) || false === $this->canCheckout($cart)) {
+        if (false === $this->checkPreCheckoutHook($isotopeOrder, (int) $cart->klarna_checkout_module) || false === $this->canCheckout($cart)) {
             return new JsonResponse([
                 'error_type' => 'address_error',
                 //'error_text' => $this->translator->trans('ERR.orderFailed', null, $data->locale),
@@ -82,17 +87,16 @@ class OrderValidation extends AbstractController
      * Call the pre checkout hook.
      * As of the default logic, a `false` return value requires to cancel the order.
      */
-    private function checkPreCheckoutHook(IsotopeOrder $order): bool
+    private function checkPreCheckoutHook(IsotopeOrder $order, int $checkoutModuleId): bool
     {
         if (isset($GLOBALS['ISO_HOOKS']['preCheckout']) && \is_array($GLOBALS['ISO_HOOKS']['preCheckout'])) {
             foreach ($GLOBALS['ISO_HOOKS']['preCheckout'] as $callback) {
                 try {
-                    if (false === System::importStatic($callback[0])->{$callback[1]}($order, $this)) {
+                    $moduleModel = ModuleModel::findByPk($checkoutModuleId);
+                    if (false === System::importStatic($callback[0])->{$callback[1]}($order, new CheckoutModule($moduleModel))) {
                         return false;
                     }
                 } catch (\Throwable $e) {
-                    // The callback most probably required $this to be an instance of \Isotope\Module\Checkout.
-                    // Nothing we can do about it here.
                 }
             }
         }
