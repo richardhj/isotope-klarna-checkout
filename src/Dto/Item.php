@@ -20,6 +20,7 @@ use Contao\Model;
 use Contao\StringUtil;
 use Isotope\Interfaces\IsotopeProduct;
 use Isotope\Interfaces\IsotopeProductCollection;
+use Isotope\Model\Config as IsotopeConfig;
 use Isotope\Model\Product;
 use Isotope\Model\ProductCollectionItem;
 use Isotope\Model\ProductCollectionSurcharge\Rule;
@@ -27,7 +28,7 @@ use Isotope\Model\ProductType;
 
 final class Item extends AbstractOrderLine
 {
-    public function __construct(ProductCollectionItem $item, IsotopeProductCollection $collection, int $taxRate = null)
+    public function __construct(ProductCollectionItem $item, IsotopeProductCollection $collection)
     {
         $this->reference = $item->getSku();
         $this->name = $item->getName();
@@ -37,28 +38,12 @@ final class Item extends AbstractOrderLine
         $this->unit_price = (int) round($item->getPrice() * 100);
         $this->total_amount = (int) round(($item->getTotalPrice() - $this->total_discount_amount / 100) * 100);
 
-        $taxFreePrice = (int) round($item->getTaxFreePrice() * 100);
-        $price = (int) round($item->getPrice() * 100);
-
-        if (null !== $taxRate) {
-            if ($price > $taxFreePrice) {
-                // Taxes are included in the price
-                $this->total_tax_amount = (int) round($this->total_amount - $this->total_amount * 10000 / (10000 + $taxRate));
-            } else {
-                // Taxes are added as surcharge
-                $taxRate = 0;
-            }
+        // If config shows net prices, tax_rate stays 0 because sales taxes are added as surcharges.
+        // If config shows gross prices, calculate tax_amount and tax_rate.
+        if (IsotopeConfig::PRICE_DISPLAY_GROSS === $collection->getConfig()->priceDisplay) {
+            $this->total_tax_amount = (int) round(($item->getTotalPrice() - $item->getTaxFreeTotalPrice()) * 100);
+            $this->tax_rate = (int) round(($this->total_tax_amount / ($this->total_amount - $this->total_tax_amount) * 10000));
         }
-
-        // No distinct tax rate was found, maybe multiple taxes apply, simply calculate the tax_rate
-        if (null === $taxRate && $taxFreePrice > 0) {
-            $taxRate = ($price - $taxFreePrice) / $taxFreePrice;
-            $taxRate = (int) round($taxRate * 100);
-
-            $this->total_tax_amount = $price - $taxFreePrice;
-        }
-
-        $this->tax_rate = $taxRate;
 
         $this->addType($item);
         $this->addProductUrl($item);

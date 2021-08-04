@@ -15,13 +15,10 @@ declare(strict_types=1);
 
 namespace Richardhj\IsotopeKlarnaCheckoutBundle\Api;
 
-use Contao\StringUtil;
-use Doctrine\DBAL\Connection;
 use Isotope\Isotope;
 use Isotope\Model\Address;
 use Isotope\Model\Config;
 use Isotope\Model\ProductCollection\Cart;
-use Isotope\Model\ProductCollectionItem;
 use Isotope\Model\Shipping;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Dto\Item;
 use Richardhj\IsotopeKlarnaCheckoutBundle\Dto\ShippingOption;
@@ -34,12 +31,10 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 class ApiClient
 {
     private NormalizerInterface $serializer;
-    private Connection $connection;
 
-    public function __construct(SerializerInterface $serializer, Connection $connection)
+    public function __construct(SerializerInterface $serializer)
     {
         $this->serializer = $serializer;
-        $this->connection = $connection;
     }
 
     public function httpClient(Config $isoConfig): HttpClientInterface
@@ -62,7 +57,7 @@ class ApiClient
         }
 
         foreach ($cart->getItems() as $item) {
-            $itemDto = new Item($item, $cart, $this->estimateTaxRate($item));
+            $itemDto = new Item($item, $cart);
 
             $orderLines[] = $this->serializer->normalize($itemDto);
         }
@@ -150,40 +145,5 @@ class ApiClient
             'city' => $address->city,
             'country' => $address->country,
         ];
-    }
-
-    private function estimateTaxRate(ProductCollectionItem $item): ?int
-    {
-        $taxRate = $this->connection->createQueryBuilder()
-            ->select('tax_rate.rate')
-            ->from('tl_iso_tax_rate', 'tax_rate')
-            ->innerJoin('tax_rate', 'tl_iso_tax_class', 'tax_class', 'tax_class.includes = tax_rate.id')
-            ->where('tax_class.id = :tax_id')
-            ->andWhere('tax_class.rates IS NULL')
-            ->setParameter('tax_id', $item->tax_id)
-            ->execute()
-            ->fetchOne()
-        ;
-
-        if (false === $taxRate) {
-            $taxRate = $this->connection->createQueryBuilder()
-                ->select('tax_rate.rate')
-                ->from('tl_iso_product_price', 'price')
-                ->innerJoin('price', 'tl_iso_tax_class', 'tax_class', 'price.tax_class = tax_class.id')
-                ->innerJoin('tax_class', 'tl_iso_tax_rate', 'tax_rate', 'tax_class.includes = tax_rate.id AND tax_class.rates IS NULL')
-                ->where('price.pid = :product_id')
-                ->setParameter('product_id', $item->product_id)
-                ->execute()
-                ->fetchOne()
-            ;
-        }
-
-        if (false === $taxRate) {
-            return null;
-        }
-
-        $rate = StringUtil::deserialize($taxRate, true);
-
-        return (int) round($rate['value'] * 100);
     }
 }
