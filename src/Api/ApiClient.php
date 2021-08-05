@@ -57,7 +57,7 @@ class ApiClient
         }
 
         foreach ($cart->getItems() as $item) {
-            $itemDto = new Item($item, $cart);
+            $itemDto = new Item($item, $cart, $cart->getBillingAddress(), $cart->getShippingAddress());
 
             $orderLines[] = $this->serializer->normalize($itemDto);
         }

@@ -20,15 +20,20 @@ use Contao\Model;
 use Contao\StringUtil;
 use Isotope\Interfaces\IsotopeProduct;
 use Isotope\Interfaces\IsotopeProductCollection;
+use Isotope\Model\Address;
 use Isotope\Model\Config as IsotopeConfig;
 use Isotope\Model\Product;
 use Isotope\Model\ProductCollectionItem;
+use Isotope\Model\ProductCollectionSurcharge;
 use Isotope\Model\ProductCollectionSurcharge\Rule;
+use Isotope\Model\ProductPrice;
 use Isotope\Model\ProductType;
+use Isotope\Model\TaxClass;
+use Isotope\Model\TaxRate;
 
 final class Item extends AbstractOrderLine
 {
-    public function __construct(ProductCollectionItem $item, IsotopeProductCollection $collection)
+    public function __construct(ProductCollectionItem $item, IsotopeProductCollection $collection, Address $billingAddress, Address $shippingAddress)
     {
         $this->reference = $item->getSku();
         $this->name = $item->getName();
@@ -38,16 +43,67 @@ final class Item extends AbstractOrderLine
         $this->unit_price = (int) round($item->getPrice() * 100);
         $this->total_amount = (int) round(($item->getTotalPrice() - $this->total_discount_amount / 100) * 100);
 
-        // If config shows net prices, tax_rate stays 0 because sales taxes are added as surcharges.
-        // If config shows gross prices, calculate tax_amount and tax_rate.
-        if (IsotopeConfig::PRICE_DISPLAY_GROSS === $collection->getConfig()->priceDisplay) {
-            $this->total_tax_amount = (int) round(($item->getTotalPrice() - $item->getTaxFreeTotalPrice()) * 100);
-            $this->tax_rate = (int) round(($this->total_tax_amount / ($this->total_amount - $this->total_tax_amount) * 10000));
-        }
+        $this->addTaxRate($item, $collection, $billingAddress, $shippingAddress);
+        $this->addTotalTaxAmount($item, $collection);
 
         $this->addType($item);
         $this->addProductUrl($item);
         $this->addImageUrl($item);
+    }
+
+    private function addTaxRate(ProductCollectionItem $item, IsotopeProductCollection $collection, Address $billingAddress, Address $shippingAddress)
+    {
+        // If config shows net prices, tax_rate stays 0 because sales taxes are added as surcharges.
+        // If config shows gross prices, calculate tax_amount and tax_rate.
+        if (IsotopeConfig::PRICE_DISPLAY_GROSS !== $collection->getConfig()->priceDisplay) {
+            return;
+        }
+
+        /** @var ProductPrice&Model $price */
+        $price = $item->getProduct()->getPrice();
+        /** @var TaxClass&Model $taxClass */
+        $taxClass = $price->getRelated('tax_class');
+        if (null === $taxClass) {
+            return;
+        }
+
+        /** @var TaxRate&Model $includedRate */
+        $includedRate = $taxClass->getRelated('includes');
+        $addresses = ['billing' => $billingAddress, 'shipping' => $shippingAddress];
+
+        // Use the tax rate that is included in the price, if applicable
+        if (null !== $includedRate
+            && $includedRate->isApplicable($item->getTotalPrice(), $addresses)
+            && $includedRate->isPercentage()) {
+            $this->tax_rate = (int) round($includedRate->getAmount() * 100);
+
+            return;
+        }
+
+        // Use the tax rate that is added to price, first applicable wins.
+        // We purposely do not support cases when multiple tax rates are applicable to a single product,
+        // or non-percantage tax_rates apply.
+        if (null !== ($addedRates = $taxClass->getRelated('rates'))) {
+            /** @var TaxRate $taxRate */
+            foreach ($addedRates as $taxRate) {
+                if ($taxRate->isApplicable($item->getTotalPrice(), $addresses) && $taxRate->isPercentage()) {
+                    $this->tax_rate = (int) round($taxRate->getAmount() * 100);
+
+                    return;
+                }
+            }
+        }
+    }
+
+    private function addTotalTaxAmount(ProductCollectionItem $item, IsotopeProductCollection $collection)
+    {
+        // If config shows net prices, tax_rate stays 0 because sales taxes are added as surcharges.
+        // If config shows gross prices, calculate tax_amount and tax_rate.
+        if (IsotopeConfig::PRICE_DISPLAY_GROSS !== $collection->getConfig()->priceDisplay) {
+            return;
+        }
+
+        $this->total_tax_amount = (int) ($this->total_amount - $this->total_amount * 10000 / (10000 + $this->tax_rate));
     }
 
     private function addType(ProductCollectionItem $item)
@@ -65,11 +121,13 @@ final class Item extends AbstractOrderLine
 
     private function addProductUrl(ProductCollectionItem $item)
     {
+        /** @var ProductCollectionItem&Model $item */
         $product = $item->getProduct();
         $jumpTo = $item->getRelated('jumpTo');
-        if (null !== $jumpTo && null !== $product
-                && $item->hasProduct()
-                && $product->isAvailableInFrontend()) {
+        if (null !== $jumpTo
+            && null !== $product
+            && $item->hasProduct()
+            && $product->isAvailableInFrontend()) {
             $this->product_url = Environment::get('url').'/'.$product->generateUrl($jumpTo);
         }
     }
@@ -100,6 +158,7 @@ final class Item extends AbstractOrderLine
     private function addTotalDiscountAmount(array $surcharges, ProductCollectionItem $item): void
     {
         foreach ($surcharges as $surcharge) {
+            /** @var ProductCollectionSurcharge&Model $surcharge */
             if (!$surcharge instanceof Rule || ('cart' === $surcharge->type && 'subtotal' === $surcharge->applyTo)) {
                 continue;
             }
